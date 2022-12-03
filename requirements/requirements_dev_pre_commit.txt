@@ -1,0 +1,48 @@
+# Everything in this file should reflect the pre-commit configuration in .pre-commit-config.yaml
+
+
+# Formatting
+# ------------------
+
+# Mostly Whitespace-Correction
+autopep8 == 2.0.0
+    pycodestyle >= 2.9.1
+
+# Automatically Upgrade Syntax
+pyupgrade == 3.3.0
+    tokenize-rt >= 3.2.0
+
+# Import Formatter
+reorder-python-imports == 3.9.0
+    classify-imports >= 4.1
+
+
+# Static Analysis
+# ------------------
+
+# Security-Specific Checker
+bandit == 1.7.4
+    GitPython >= 1.0.1
+    PyYAML >= 5.3.1
+    stevedore >= 1.20.0
+
+# Documentation-Specific Checker
+pydocstyle == 6.1.1
+    snowballstemmer
+
+# General Code Linter
+pylint == 2.15.7
+    astroid <= 2.14.0-dev0, >= 2.12.12
+        wrapt < 2, >= 1.11
+        lazy-object-proxy >= 1.4.0
+    colorama >= 0.4.5; sys_platform == 'win32'
+    dill >= 0.2
+    isort < 6, >= 4.2.5
+    mccabe < 0.8, >= 0.6
+    platformdirs >= 2.2.0
+    tomlkit >= 0.10.1
+    tomli >= 1.1.0
+
+# Type Checker
+pyright == 1.1.282
+    nodeenv >= 1.6.0

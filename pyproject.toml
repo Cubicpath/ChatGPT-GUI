@@ -1,0 +1,217 @@
+[build-system]
+requires = ["flit_core >=3.7.1,<4"]
+build-backend = "flit_core.buildapi"
+
+# Flit project configuration.
+# ---------------------------
+[project]
+name = "chatgpt_gui"
+authors = [{name = "Cubicpath", email = "cubicpath@pm.me"},]
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+keywords = ["ai", "gpt", "gui", "app", "client", "unofficial", "ChatGPT",]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: User Interfaces",
+    "Typing :: Typed",
+]
+requires-python = ">=3.10"
+dynamic = ["version", "description",]
+dependencies = [
+    "PySide6_Essentials>=6.4.1",
+    "toml>=0.10.2",
+]
+
+[project.optional-dependencies]
+all = [
+    "python-dotenv>=0.21.0",
+]
+dev = [
+    "autopep8>=2.0.0",
+    "bandit>=1.7.4",
+    "pylint>=2.15.7",
+    "pyright>=1.1.282",
+]
+
+[project.urls]
+"Source Code" = "https://github.com/Cubicpath/ChatGPT-GUI"
+"Issue Tracker" = "https://github.com/Cubicpath/ChatGPT-GUI/issues"
+
+[project.gui-scripts]
+chatgpt = "chatgpt_gui.run:main"
+
+
+# AutoPEP8 configuration.
+# ---------------------
+[tool.autopep8]
+max_line_length = 120
+ignore = ["E7",]
+in-place = true
+recursive = true
+aggressive = 3
+
+
+# Bandit configuration.
+# ---------------------
+[tool.bandit]
+skips = [
+    "B311",  # random is not used for security/cryptographic purposes.
+    "B404",  # subprocess is used with minimal user input.
+]
+
+
+# PyDocStyle configuration.
+# ---------------------
+[tool.pydocstyle]
+# View error_code meanings at https://www.pydocstyle.org/en/stable/error_codes.html
+ignore = [
+    # Conflicts with other rules
+    "D203", "D213",
+    "D400",
+    # Weird section rules that don't work
+    "D407", "D413",
+]
+match = ".*.py"
+match_dir = "(?!venv|tests|_vendor|__pycache__)[^\\.].*"
+
+
+# Pylint configuration.
+# ---------------------
+[tool.pylint.'MASTER']
+ignore-paths = ['.*/_vendor/.*']
+jobs = 0
+load-plugins = [
+    "pylint.extensions.bad_builtin",
+    # "pylint.extensions.broad_try_clause",
+    "pylint.extensions.check_elif",
+    "pylint.extensions.code_style",
+    "pylint.extensions.comparetozero",
+    "pylint.extensions.comparison_placement",
+    # "pylint.extensions.confusing_elif",
+    "pylint.extensions.consider_ternary_expression",
+    "pylint.extensions.docparams",
+    "pylint.extensions.docstyle",
+    "pylint.extensions.empty_comment",
+    "pylint.extensions.emptystring",
+    # "pylint.extensions.eq_without_hash",
+    "pylint.extensions.for_any_all",
+    # "pylint.extensions.mccabe",
+    "pylint.extensions.no_self_use",
+    "pylint.extensions.overlapping_exceptions",
+    "pylint.extensions.private_import",
+    # "pylint.extensions.redefined_loop_name",
+    # "pylint.extensions.redefined_variable_type",
+    "pylint.extensions.set_membership",
+    "pylint.extensions.typing",
+    # "pylint.extensions.while_used",
+]
+py-version = "3.10"
+
+[tool.pylint.'CLASSES']
+defining-attr-methods = [
+    "__init__",
+    "__new__",
+    "__post_init__",
+    "_init_ui",
+    "setUp",
+]
+exclude-protected = ["_dump_str",]
+# Temporarily defined due to bug, see pylint issue gh-7782
+valid-metaclass-classmethod-first-arg = ["mcs",]
+
+[tool.pylint.'DESIGN']
+max-args = 999
+max-attributes = 999
+max-bool-expr = 999
+max-branches = 999
+max-locals = 999
+max-parents = 999
+max-public-methods = 999
+max-returns = 999
+max-statements = 999
+min-public-methods = 0
+
+[tool.pylint.'EXCEPTIONS']
+overgeneral-exceptions = []
+
+[tool.pylint.'FORMAT']
+max-line-length = 120
+max-module-lines = 1000
+
+[tool.pylint.'IMPORTS']
+allow-wildcard-with-all = true
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+    # Conventions
+    "invalid-name",                  # C0103
+    "import-outside-toplevel",       # C0415
+    # Inspections (?)
+    "c-extension-no-member",         # I1101
+    # Refactors
+    "duplicate-code",                # R0801
+    "inconsistent-return-statements",# R1710
+    # These do not work with custom bitshifts that return None
+    "pointless-statement",           # W0104
+    "expression-not-assigned",       # W0106
+    # These don't work with the general design choices of the project
+    "unnecessary-lambda",            # W0108
+    "wildcard-import",               # W0401
+    "unused-wildcard-import",        # W0614
+    "redefined-builtin",             # W0622
+    # Doesn't work with (positional arguments with a default value) before a backslash and *args
+    "keyword-arg-before-vararg",     # W1113
+    # Will implement complete docs later
+    "missing-return-doc",            # W9011
+    # These do not work with starred parameter names
+    "missing-param-doc",             # W9015
+    "differing-param-doc",           # W9017
+    # These do not work with wildcard imports using __all__
+    "import-error",                  # E0401
+    "undefined-variable",            # E0602
+    "undefined-all-variable",        # E0603
+]
+
+[tool.pylint.'MISCELLANEOUS']
+notes = [] # This disables warnings caused by TO|DO, FIX|ME, etc.
+
+[tool.pylint.'PARAMETER DOCUMENTATION']
+accept-no-param-doc = false
+accept-no-raise-doc = false
+accept-no-return-doc = false
+accept-no-yields-doc = true
+
+[tool.pylint.'REFACTORING']
+max-nested-blocks = 999
+
+[tool.pylint.'REPORTS']
+output-format = "parseable"
+reports = "no"
+
+[tool.pylint.'STRING']
+check-quote-consistency = true
+check-str-concat-over-line-jumps = false
+
+[tool.pylint.'VARIABLES']
+allowed-redefined-builtins = ["help", "id",]
+
+
+# Pyright configuration.
+# ---------------------
+[tool.pyright]
+ignore = ["src/chatgpt_gui/_vendor",]
+pythonVersion = "3.10"
+venvPath = "."
+venv = "venv"
+
+reportSelfClsParameterName = false
+reportUnusedExpression = false
+reportWildcardImportFromLibrary = false

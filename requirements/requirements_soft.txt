@@ -1,0 +1,5 @@
+# All dependencies in this file are not required for the program to run, but enable extra functionality.
+
+
+# To load .env files
+python-dotenv == 0.21.0

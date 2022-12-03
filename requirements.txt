@@ -1,0 +1,3 @@
+# Install all application functionality
+-r requirements/requirements_hard.txt
+-r requirements/requirements_soft.txt

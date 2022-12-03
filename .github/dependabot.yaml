@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Enable version updates for pip dependencies every day (weekdays)
+  # Check pyproject.toml, requirements.txt, requirements_dev.txt
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+      - "pip requirements"
+    ignore:
+      # shiboken6 is updated at the same time and with the same version as PySide6
+      - dependency-name: "shiboken6"

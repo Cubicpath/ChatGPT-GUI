@@ -1,0 +1,9 @@
+# All dependencies in this file are required for the program to run.
+
+
+# GUI, Networking stack, etc.
+PySide6_Essentials == 6.4.1
+    shiboken6 == 6.4.1
+
+# Configuration file parser and editor
+toml == 0.10.2

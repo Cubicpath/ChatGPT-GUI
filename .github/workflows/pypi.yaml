@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+env:
+  DEFAULT_PYTHON: "3.10"
+
+jobs:
+  pypi:
+    name: Upload to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: PyPI
+      url: https://pypi.org/project/chatgpt-gui/
+
+    steps:
+      - name: Check out code from Github
+        uses: actions/checkout@v3
+
+      - name: Setup Python ${{ env.DEFAULT_PYTHON }}
+        id: python
+        uses: actions/setup-python@master
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          check-latest: true
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build dist
+        run: python -m build
+
+      - name: Publish package to PyPI
+        if: startsWith(github.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip_existing: true
+          verbose: true

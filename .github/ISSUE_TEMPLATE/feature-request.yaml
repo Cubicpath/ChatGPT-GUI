@@ -1,0 +1,31 @@
+name: Feature Request
+description: Ask for a new feature to be implemented!
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees:
+  - Cubicpath
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to give feedback!
+
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Details
+      description: How can we get in touch with you if we need more info?
+      placeholder: ex. email@example.com
+    validations:
+      required: false
+
+  - type: textarea
+    id: feature-request
+    attributes:
+      label: Feature Request
+      description: Add text describing a new feature and how it would work.
+      placeholder: Tell us what you want!
+      value: "Add this feature!"
+    validations:
+      required: true

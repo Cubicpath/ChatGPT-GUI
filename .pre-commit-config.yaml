@@ -1,0 +1,78 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      - id: check-yaml
+      - id: debug-statements
+      - id: detect-private-key
+      - id: double-quote-string-fixer
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: name-tests-test
+        args: ["--pytest-test-first"]
+      - id: trailing-whitespace
+
+  - repo: https://github.com/pre-commit/mirrors-autopep8
+    rev: v2.0.0
+    hooks:
+      - id: autopep8
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.4
+    hooks:
+      - id: bandit
+        additional_dependencies: ["bandit[toml]",]
+        pass_filenames: false
+        args:
+          [
+            "-c", "pyproject.toml", # Use config located at [tool.bandit] in pyproject.toml
+            "-r", "src",            # Recursively scan src
+          ]
+
+  - repo: https://github.com/asottile/reorder_python_imports
+    rev: v3.9.0
+    hooks:
+      - id: reorder-python-imports
+        pass_filenames: false
+        args:
+          [
+            "--application-directories=.:src",
+            "--py310-plus",
+          ]
+
+  -   repo: https://github.com/pycqa/pydocstyle
+      rev: 6.1.1
+      hooks:
+      - id: pydocstyle
+        additional_dependencies: ["pydocstyle[toml]",]
+        pass_filenames: false
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.0
+    hooks:
+      - id: pyupgrade
+        args: ["--py310-plus",]
+
+  - repo: https://github.com/PyCQA/pylint
+    rev: v2.15.7
+    hooks:
+      - id: pylint
+        name: pylint
+        pass_filenames: false
+        args:
+          [
+            "src", # Only lint src
+            "-rn", # Only display messages
+            "-sn", # Don't display the score
+          ]
+
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.282
+    hooks:
+      - id: pyright

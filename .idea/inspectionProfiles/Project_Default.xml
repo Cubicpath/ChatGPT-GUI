@@ -1,0 +1,82 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="MarkdownUnresolvedHeaderReference" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="PyArgumentListInspection" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="PyCompatibilityInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ourVersions">
+        <value>
+          <list size="2">
+            <item index="0" class="java.lang.String" itemvalue="3.10" />
+            <item index="1" class="java.lang.String" itemvalue="3.11" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyMissingTypeHintsInspection" enabled="true" level="INFORMATION" enabled_by_default="true">
+      <scope name="Source and Distribution" level="WEAK WARNING" enabled="true" />
+    </inspection_tool>
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="1">
+            <item index="0" class="java.lang.String" itemvalue="PySide6" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N806" />
+        </list>
+      </option>
+      <option name="ignoredBaseClasses">
+        <list>
+          <option value="unittest.TestCase" />
+          <option value="unittest.case.TestCase" />
+          <option value="shiboken6.Shiboken.Object" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyShadowingBuiltinsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredNames">
+        <list>
+          <option value="help" />
+          <option value="id" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="chatgpt_gui.gui.widgets.external_text_browser.ExternalTextBrowser.anchorClicked" />
+          <option value="PySide6.QtCore.aboutToQuit.*" />
+          <option value="PySide6.QtCore.activated.*" />
+          <option value="PySide6.QtCore.QCoreApplication.aboutToQuit" />
+          <option value="PySide6.QtCore.QTimer.timeout" />
+          <option value="PySide6.QtCore.timeout.*" />
+          <option value="PySide6.QtGui.triggered.connect" />
+          <option value="PySide6.QtNetwork.authenticationRequired.*" />
+          <option value="PySide6.QtNetwork.downloadProgress.*" />
+          <option value="PySide6.QtNetwork.finished.*" />
+          <option value="PySide6.QtNetwork.QNetworkAccessManager.authenticationRequired" />
+          <option value="PySide6.QtNetwork.QNetworkReply.downloadProgress" />
+          <option value="PySide6.QtNetwork.QNetworkReply.finished" />
+          <option value="PySide6.QtNetwork.QNetworkReply.redirected" />
+          <option value="PySide6.QtNetwork.QNetworkReply.redirectAllowed" />
+          <option value="PySide6.QtNetwork.redirected.*" />
+          <option value="PySide6.QtWidgets.anchorClicked.*" />
+          <option value="PySide6.QtWidgets.buttonClicked.*" />
+          <option value="PySide6.QtWidgets.clicked.*" />
+          <option value="PySide6.QtWidgets.currentIndexChanged.*" />
+          <option value="PySide6.QtWidgets.QMessageBox.buttonClicked" />
+          <option value="PySide6.QtWidgets.QPushButton.clicked" />
+          <option value="PySide6.QtWidgets.returnPressed.*" />
+          <option value="toml.encoder._dump_str" />
+          <option value="type.__getitem__" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

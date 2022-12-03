@@ -1,0 +1,17 @@
+ignore_updates = false
+language = "en-US"
+
+[gui.window]
+x_size = 900 # Minimum value of 100
+y_size = 500 # Minimum value of 100
+
+[gui.themes]
+selected = "light"
+
+[gui.themes.dark]
+display_name = "Breeze Dark"
+path = "builtin::dark"
+
+[gui.themes.light]
+display_name = "Breeze Light"
+path = "builtin::light"
