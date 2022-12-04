@@ -46,7 +46,9 @@ class Client(QObject):
         self.host: str = 'chat.openai.com'
         self.conversation_id: uuid.UUID | None = None
         self.last_message_id: uuid.UUID = uuid.uuid4()
+        self.models: list[str] | None = None
 
+        self._first_request: bool = True
         self._access_token: str | None = None
         self._session_token: str | None = kwargs.pop('session_token', os.getenv('CHATGPT_SESSION_AUTH', None))
         if self._session_token is None and CG_SESSION_PATH.is_file():
@@ -74,15 +76,6 @@ class Client(QObject):
         if self.session_token:
             self.set_cookie('__Secure-next-auth.session-token', self.session_token)
 
-        # Use main webpage to get other cookies
-        self._get('chat')
-
-        # Get authorization so API calls will work
-        self.refresh_auth()
-
-        # Get models
-        self.models: list[str] = [model['slug'] for model in self.get_models()]
-
     def _get(self, path: str, update_auth_on_401: bool = True, **kwargs) -> Response:
         """Get a :py:class:`Response` from ChatGPT.
 
@@ -90,6 +83,11 @@ class Client(QObject):
         :param update_auth_on_401: run self._refresh_auth if response status code is 401 Unauthorized
         :param kwargs: Key word arguments to pass to the requests GET Request.
         """
+        if self._first_request:
+            self._first_request = False
+            self._get('chat')
+            self.refresh_auth()
+
         response: Response = self.session.get(self.api_root + path.strip(), wait_until_finished=True, **kwargs)
 
         if session_token := self.session.cookies.get('__Secure-next-auth.session-token'):
@@ -117,6 +115,9 @@ class Client(QObject):
 
         :param message: Message to send.
         """
+        if self.models is None:
+            self.models = [model['slug'] for model in self.get_models()]
+
         message_id: uuid.UUID = uuid.uuid4()
         message_data = {
             'action': 'next',

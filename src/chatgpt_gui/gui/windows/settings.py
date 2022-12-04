@@ -102,7 +102,7 @@ class SettingsWindow(Singleton, QWidget):
                 self.token_clear_button.setDisabled(False)
                 app().client.session_token = text
             else:
-                del app().client.session_token
+                clear_token()
             toggle_token_visibility()
 
         def clear_token() -> None:
