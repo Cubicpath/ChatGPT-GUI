@@ -49,7 +49,18 @@ How to Use:
 under the `Tools` context menu
 
 ### Authentication:
-...
+As this app is unofficial, you must use your own session key, which you can get by logging in to [ChatGPT] and
+either getting data from the website's cookies.
+
+Guide:
+- Sign in to [ChatGPT]
+- Navigate to the Cookies for chat.openai.com
+  - On Firefox -- F12 > Move to the "Storage" tab > Under "Cookies" select https://chat.openai.com
+- Double-click the `__Secure-next-auth.session-token` cookie value and copy with CTRL + C
+- Open the Settings window, unlock the input by pressing the "Edit Session Token" button, then paste the copied value.
+- Press the Set button, and you should now be authenticated!
+
+![Settings](https://i.imgur.com/RR6tWYSl.png)
 
 ### Themes:
 Themes are a way to style already-existing elements (Think CSS). They are held in a directory with their resources
