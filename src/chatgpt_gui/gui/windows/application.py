@@ -175,10 +175,12 @@ class AppWindow(Singleton, QMainWindow):
         """Append some new text to the output.
 
         Adds two newlines after the text for better differentiation between messages.
+        Also scrolls down to bottom for you.
 
         :param text: Text to append to output.
         """
         self.output.setText(f'{self.output.toPlainText()}{text}\n\n')
+        self.output.verticalScrollBar().setValue(self.output.verticalScrollBar().maximum())
 
     def send_message(self) -> None:
         """Send a message to the client using the current input text.
@@ -200,7 +202,6 @@ class AppWindow(Singleton, QMainWindow):
         :param message: Message received.
         """
         self.append_to_output(tr('gui.output_text.ai_prompt', message, key_eval=False))
-        self.output.verticalScrollBar().setValue(self.output.verticalScrollBar().maximum())
 
         self.input.setDisabled(False)
         self.input.setFocus()
