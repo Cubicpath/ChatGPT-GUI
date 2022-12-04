@@ -24,10 +24,9 @@ from ...utils import init_objects
 from ..aliases import app
 from ..menus import HelpContextMenu
 from ..menus import ToolsContextMenu
-from ..widgets import HistoryComboBox
 from ..widgets import ExceptionLogger
 from ..widgets import ExternalTextBrowser
-from .exception_reporter import ExceptionReporter
+from ..widgets import PasteLineEdit
 
 
 def size_label_for(num: int) -> str:
@@ -55,24 +54,9 @@ class AppWindow(Singleton, QMainWindow):
         """Create the window for the application."""
         super().__init__()
 
-        self.current_image: QPixmap | None = None
-        self.detached: dict[str, QMainWindow | None] = {'media': None, 'text': None}
         self.resize(size)
 
-        self.exception_reporter: ExceptionReporter
-        self.input_field: HistoryComboBox
-        self.media_frame: QFrame
-        self.image_size_label: QLabel
-        self.image_detach_button: QPushButton
-        self.media_output: QGraphicsView
-        self.text_frame: QFrame
-        self.text_size_label: QLabel
-        self.text_detach_button: QPushButton
-        self.text_output: ExternalTextBrowser
-        self.clear_picture: QPushButton
-        self.copy_picture: QPushButton
-        self.clear_text: QPushButton
-        self.copy_text: QPushButton
+        app().client.receivedMessage.connect(self.receive_message)
 
         self._init_toolbar()
         self._init_ui()
@@ -126,7 +110,7 @@ class AppWindow(Singleton, QMainWindow):
                     logger.reporter.activateWindow,
                     logger.reporter.raise_
                 ))
-            }
+            },
         })
 
         app().init_translations({
@@ -160,15 +144,24 @@ class AppWindow(Singleton, QMainWindow):
         # This works in the standard AST, but is a seemingly arbitrary limitation set by the interpreter.
         # See:
         # https://stackoverflow.com/questions/64055314/why-cant-pythons-walrus-operator-be-used-to-set-instance-attributes#answer-66617839
+        self.output, self.input = ExternalTextBrowser(self), PasteLineEdit(self)
 
-        init_objects({})
+        init_objects({
+            self.output: {
+                'placeholderText': 'AI Response will appear here...',
+            },
+            self.input: {
+                'placeholderText': 'Send a message...',
+                'returnPressed': self.send_message
+            }
+        })
 
         app().init_translations({})
 
         init_layouts({
             # Main layout
-            (layout := QGridLayout()): {
-                'items': []
+            (layout := QVBoxLayout()): {
+                'items': [self.output, self.input]
             }
         })
 
@@ -177,6 +170,27 @@ class AppWindow(Singleton, QMainWindow):
 
             self: {'centralWidget': main_widget}
         })
+
+    def send_message(self) -> None:
+        """Send a message to the client using the current input text.
+
+        Clears the input and disables after sending.
+        """
+        msg: str = self.input.text()
+        self.input.clear()
+        self.input.setDisabled(True)
+
+        app().client.send_message(msg)
+
+    def receive_message(self, message: str) -> None:
+        """Receive a response from the client.
+
+        Re-enables the input and appends the response to the output.
+
+        :param message: Message received.
+        """
+        self.input.setDisabled(False)
+        self.output.setText(self.output.toPlainText() + f'{message}\n\n')
 
     # # # # # Events
 
