@@ -789,7 +789,7 @@ class Request:
             self._request.setTransferTimeout(transfer_timeout)
 
         verb: bytes = self.method.encode('utf8')
-        _reply: QNetworkReply = session.manager.sendCustomRequest(self._request, verb, data=request_data)
+        _reply: QNetworkReply = session.manager.sendCustomRequest(self._request, verb, request_data)
         response: Response = self._prepare_response(_reply, finished, progress)
 
         if self.auth:

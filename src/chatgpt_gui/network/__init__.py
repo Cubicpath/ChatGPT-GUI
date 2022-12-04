@@ -4,6 +4,7 @@
 """Main networking package for ChatGPT-GUI."""
 
 __all__ = (
+    'Client',
     'gc_response',
     'KNOWN_HEADERS',
     'NetworkSession',
@@ -12,6 +13,7 @@ __all__ = (
     'VersionChecker',
 )
 
+from .client import Client
 from .manager import gc_response
 from .manager import KNOWN_HEADERS
 from .manager import NetworkSession

@@ -10,10 +10,8 @@ __all__ = (
     'CG_CONFIG_PATH',
     'CG_PACKAGE_NAME',
     'CG_RESOURCE_PATH',
-    'CG_TOKEN_PATH',
+    'CG_SESSION_PATH',
     'CG_URL_PATTERN',
-    'CG_WEB_DUMP_PATH',
-    'CG_WPAUTH_PATH',
     'MARKDOWN_IMG_LINK_PATTERN',
     'MARKDOWN_REF_LINK_PATTERN',
     'RFC_5646_PATTERN',
@@ -62,14 +60,8 @@ CG_CONFIG_PATH: Final[Path] = Path.home() / '.config/chatgpt_gui'
 CG_RESOURCE_PATH: Final[Path] = Path(__file__).parent / 'resources'
 """Directory containing application resources."""
 
-CG_TOKEN_PATH: Final[Path] = CG_CONFIG_PATH / '.token'
-"""File containing api token."""
-
-CG_WEB_DUMP_PATH: Final[Path] = CG_CACHE_PATH / 'cached_requests'
-"""Directory to dump web requests to."""
-
-CG_WPAUTH_PATH: Final[Path] = CG_CONFIG_PATH / '.wpauth'
-"""File containing auth key (Used for API token generation)."""
+CG_SESSION_PATH: Final[Path] = CG_CONFIG_PATH / '.session'
+"""File containing session token."""
 
 # Patterns
 

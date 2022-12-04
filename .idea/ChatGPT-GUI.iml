@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/.pytest_cache" />
+      <excludeFolder url="file://$MODULE_DIR$/.tox" />
+      <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/build" />
+      <excludeFolder url="file://$MODULE_DIR$/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/.mypy_cache" />
+    </content>
+    <content url="file://$USER_HOME$/.cache/chatgpt_gui" />
+    <content url="file://$USER_HOME$/.config/chatgpt_gui" />
+    <orderEntry type="jdk" jdkName="Python 3.10 (ChatGPT-GUI)" jdkType="Python SDK" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="PackageRequirementsSettings">
+    <option name="versionSpecifier" value="Strong equality (==x.y.z)" />
+  </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />
     <option name="myDocStringFormat" value="Plain" />

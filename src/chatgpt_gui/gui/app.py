@@ -34,6 +34,7 @@ from ..lang import Translator
 from ..models import DeferredCallable
 from ..models import DistributedCallable
 from ..models import Singleton
+from ..network import Client
 from ..network import NetworkSession
 from ..network import Response
 from ..network import VersionChecker
@@ -154,6 +155,7 @@ class GetterApp(Singleton, QApplication):
 
         # Must load client last, but before windows
         self.load_env(verbose=True)
+        self.client = Client(self)
 
         # Setup window instances
         self._create_windows()
@@ -174,7 +176,7 @@ class GetterApp(Singleton, QApplication):
 
     def _create_paths(self) -> None:
         """Create files and directories if they do not exist."""
-        for dir_path in (CG_CACHE_PATH, CG_WEB_DUMP_PATH, CG_CONFIG_PATH):
+        for dir_path in (CG_CACHE_PATH, CG_CONFIG_PATH):
             if not dir_path.is_dir():
                 dir_path.mkdir(parents=True)
 
