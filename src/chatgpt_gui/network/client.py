@@ -1,7 +1,7 @@
 ###################################################################################################
 #                              MIT Licence (C) 2022 Cubicpath@Github                              #
 ###################################################################################################
-"""Defines the HaloInfiniteGetter HTTP Client."""
+"""Defines the ChatGPT-GUI HTTP Client."""
 from __future__ import annotations
 
 __all__ = (
@@ -32,14 +32,13 @@ class Client(QObject):
     def __init__(self, parent: QObject, **kwargs) -> None:
         """Initialize OpenAI Client.
 
-        Order of precedence for token and wpauth values::
+        Order of precedence for session token::
 
             1. session_token kwarg value
-            2. CHATGPT_SESSION_AUTH environment variables
+            2. CHATGPT_SESSION_AUTH environment variable
             3. user's .session config file (Created by application)
 
-        :keyword access_token: Token to authenticate self to OpenAI.
-        :keyword session_token: Halo Waypoint authentication key, allows for creation of access tokens.
+        :keyword session_token: Session token, allows for creation of access tokens.
         """
         super().__init__(parent)
         self.receivedMessage.connect(print)
@@ -85,7 +84,7 @@ class Client(QObject):
         self.models: list[str] = [model['slug'] for model in self.get_models()]
 
     def _get(self, path: str, update_auth_on_401: bool = True, **kwargs) -> Response:
-        """Get a :py:class:`Response` from HaloWaypoint.
+        """Get a :py:class:`Response` from ChatGPT.
 
         :param path: path to append to the API root
         :param update_auth_on_401: run self._refresh_auth if response status code is 401 Unauthorized
@@ -160,9 +159,9 @@ class Client(QObject):
 
         self.receivedMessage.emit(response_message)
 
-    def hidden_key(self) -> str:
-        """:return: The first and last 3 characters of the waypoint token, seperated by periods."""
-        key = self.access_token
+    def hidden_token(self) -> str:
+        """:return: The first and last 3 characters of the session token, seperated by periods."""
+        key = self.session_token
         if key is not None and len(key) > 6:
             return f'{key[:3]}{"." * 50}{key[-3:]}'
         return 'None'

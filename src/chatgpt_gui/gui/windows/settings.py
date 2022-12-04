@@ -55,8 +55,8 @@ class SettingsWindow(Singleton, QWidget):
         )
 
         self.theme_dropdown: QComboBox
-        self.key_set_button: QPushButton
-        self.key_field: QLineEdit
+        self.token_set_button: QPushButton
+        self.token_field: QLineEdit
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -78,31 +78,45 @@ class SettingsWindow(Singleton, QWidget):
             if str(file_path) != '.':
                 app().settings.export_to(file_path)
 
-        def hide_key() -> None:
-            """Hide API key."""
-            self.key_set_button.setDisabled(True)
-            self.key_field.setDisabled(True)
-            self.key_field.setText('<PLACEHOLDER>')
-            self.key_field.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        def hide_token() -> None:
+            """Hide session key."""
+            self.token_set_button.setDisabled(True)
+            self.token_field.setDisabled(True)
+            self.token_field.setText(app().client.hidden_token())
+            self.token_field.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        def toggle_key_visibility() -> None:
-            """Toggle hiding and showing the API key."""
-            if not self.key_field.isEnabled():
-                self.key_field.setAlignment(Qt.AlignmentFlag.AlignLeft)
-                self.key_field.setText('<PLACEHOLDER>')
-                self.key_field.setDisabled(False)
-                self.key_field.setFocus()
-                self.key_set_button.setDisabled(False)
+        def toggle_token_visibility() -> None:
+            """Toggle hiding and showing the session key."""
+            if not self.token_field.isEnabled():
+                self.token_field.setAlignment(Qt.AlignmentFlag.AlignLeft)
+                self.token_field.setText(str(app().client.session_token))
+                self.token_field.setDisabled(False)
+                self.token_field.setFocus()
+                self.token_set_button.setDisabled(False)
             else:
-                hide_key()
+                hide_token()
+
+        def set_token() -> None:
+            """Set the client's session token to the current text in the token field."""
+            if text := self.token_field.text().strip():
+                self.token_clear_button.setDisabled(False)
+                app().client.session_token = text
+            else:
+                del app().client.session_token
+            toggle_token_visibility()
+
+        def clear_token() -> None:
+            del app().client.session_token
+            hide_token()
+            self.token_clear_button.setDisabled(True)
 
         # Define widget attributes
         # Cannot be defined in init_objects() as walrus operators are not allowed for object attribute assignment.
         # This works in the standard AST, but is a seemingly arbitrary limitation set by the interpreter.
         # See: https://stackoverflow.com/questions/64055314#answer-66617839
         (
-            self.key_set_button, self.token_clear_button,
-            self.theme_dropdown, self.key_field
+            self.token_set_button, self.token_clear_button,
+            self.theme_dropdown, self.token_field
         ) = (
             QPushButton(self), QPushButton(self),
             TranslatableComboBox(self), PasteLineEdit(self)
@@ -134,7 +148,22 @@ class SettingsWindow(Singleton, QWidget):
                 'clicked': DeferredCallable(QDesktopServices.openUrl, lambda: QUrl(app().settings.path.as_uri()))
             },
             (key_show_button := QPushButton(self)): {
-                'clicked': toggle_key_visibility
+                'clicked': toggle_token_visibility
+            },
+            self.token_set_button: {
+                'size': {'minimum': (40, None)},
+                'clicked': set_token
+            },
+            self.token_clear_button: {
+                'disabled': not app().client.session_token,
+                'clicked': clear_token
+            },
+
+            # Line editors
+            self.token_field: {
+                'font': QFont('segoe ui', 8), 'text': app().client.hidden_token(),
+                'pasted': set_token, 'returnPressed': self.token_set_button.click,
+                'size': {'minimum': (220, None)}, 'alignment': Qt.AlignmentFlag.AlignCenter
             },
 
             # Dropdowns
@@ -162,7 +191,7 @@ class SettingsWindow(Singleton, QWidget):
             export_button.setText: 'gui.settings.export',
             open_editor_button.setText: 'gui.settings.open_editor',
             key_show_button.setText: 'gui.settings.auth.edit',
-            self.key_set_button.setText: 'gui.settings.auth.set',
+            self.token_set_button.setText: 'gui.settings.auth.set',
             self.token_clear_button.setText: 'gui.settings.auth.clear_token'
         })
 
@@ -172,7 +201,7 @@ class SettingsWindow(Singleton, QWidget):
                 'items': [self.token_clear_button]
             },
             (key_layout := QHBoxLayout()): {
-                'items': [self.key_field, self.key_set_button]
+                'items': [self.token_field, self.token_set_button]
             },
             (bottom := QVBoxLayout()): {
                 'items': [key_show_button, key_layout, token_layout]
@@ -233,13 +262,13 @@ class SettingsWindow(Singleton, QWidget):
         self.refresh_dropdowns()
 
         init_objects({
-            self.key_field: {
+            self.token_field: {
                 'disabled': True,
                 'alignment': Qt.AlignmentFlag.AlignCenter,
-                'text': '<PLACEHOLDER>'
+                'text': app().client.hidden_token()
             },
-            self.key_set_button: {'disabled': True},
-            self.token_clear_button: {'disabled': not '<PLACEHOLDER>'}
+            self.token_set_button: {'disabled': True},
+            self.token_clear_button: {'disabled': not app().client.session_token}
         })
 
         event.accept()

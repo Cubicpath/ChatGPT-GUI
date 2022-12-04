@@ -22,8 +22,8 @@
     "information.upgrade_version.ignore": "Ignore All",
     "information.upgrade_version.title": "Upgrade {app.name} Version",
     "information.upgrade_version.upgrade": "Upgrade and Restart",
-    "warnings.empty_token.description": "The authorization token is not set, please set CHATGPT_AUTH environment variable and restart, or set the auth key value in Settings.\n\nYou will be unable to acquire new data until a new token is provided.",
-    "warnings.empty_token.title": "Empty API Token",
+    "warnings.empty_token.description": "The session token is not set, please set CHATGPT_SESSION_AUTH environment variable and restart, or set the session token value in Settings.\n\nYou will be unable to acquire new data until a new token is provided.",
+    "warnings.empty_token.title": "Empty Session Token",
     "errors.missing_package.cancel": "Cancel",
     "errors.missing_package.description": "The action \"%s\" requires the \"{0}\" package, which is not currently installed.\n\nPressing \"{errors.missing_package.install}\" will install it using the following command:\n\n\"%s -m pip install {0}\"",
     "errors.missing_package.install": "Install",
@@ -94,8 +94,8 @@
     "gui.status.default": "No current exceptions...",
     "gui.status_bar.title": "Status Bar",
 
-    "gui.settings.auth.clear_token": "Clear API Token",
-    "gui.settings.auth.edit": "Edit API Token",
+    "gui.settings.auth.clear_token": "Clear Session Token",
+    "gui.settings.auth.edit": "Edit Session Token",
     "gui.settings.auth.set": "Set",
     "gui.settings.export": "Export Settings",
     "gui.settings.import": "Import Settings",
@@ -107,8 +107,8 @@
 
 
     "network.http.codes.400.description": "Your search path has malformed syntax or bad characters.",
-    "network.http.codes.401.description": "No permission -- Your API token is most likely invalid.",
-    "network.http.codes.403.description": "Request forbidden -- You cannot get this resource with or without an API token.",
+    "network.http.codes.401.description": "No permission -- Your access token is most likely invalid.",
+    "network.http.codes.403.description": "Request forbidden -- You cannot get this resource with or without an access token.",
     "network.http.codes.404.description": "No resource found at the given location.",
     "network.http.codes.405.description": "Invalid method -- GET requests are not accepted for this resource.",
     "network.http.codes.406.description": "Client does not support the given resource format."
