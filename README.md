@@ -50,7 +50,7 @@ under the `Tools` context menu
 
 ### Authentication:
 As this app is unofficial, you must use your own session key, which you can get by logging in to [ChatGPT] and
-either getting data from the website's cookies.
+getting data from the website's cookies.
 
 Guide:
 - Sign in to [ChatGPT]
