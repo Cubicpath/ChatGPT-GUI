@@ -480,16 +480,16 @@ class GetterApp(Singleton, QApplication):
 
         # Load externally stored icons
         # pylint: disable=cell-var-from-loop
-        for key, url in external_icon_links.items():
+        for _key, url in external_icon_links.items():
             # Create a new handler for every key being requested.
-            def handle_reply(reply: Response):
+            def handle_reply(reply: Response, key=_key):
                 icon = icon_from_bytes(reply.data)
                 set_or_swap_icon(self.icon_store, key, icon)
 
             self.session.get(url, finished=handle_reply)
 
         # Set the default icon for all windows.
-        self.setWindowIcon(self.icon_store['hi'])
+        self.setWindowIcon(self.icon_store['openai'])
 
     def get_theme_icon(self, icon: str) -> QIcon:
         """Return the icon for the given theme.
