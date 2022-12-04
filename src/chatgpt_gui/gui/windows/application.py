@@ -188,7 +188,7 @@ class AppWindow(Singleton, QMainWindow):
         message: str = self.input.text()
         self.input.clear()
         self.input.setDisabled(True)
-        self.append_to_output(tr('gui.output_text.you_prompt', message))
+        self.append_to_output(tr('gui.output_text.you_prompt', message, key_eval=False))
 
         app().client.send_message(message)
 
@@ -199,7 +199,8 @@ class AppWindow(Singleton, QMainWindow):
 
         :param message: Message received.
         """
-        self.append_to_output(tr('gui.output_text.ai_prompt', message))
+        self.append_to_output(tr('gui.output_text.ai_prompt', message, key_eval=False))
+        self.output.verticalScrollBar().setValue(self.output.verticalScrollBar().maximum())
 
         self.input.setDisabled(False)
         self.input.setFocus()
