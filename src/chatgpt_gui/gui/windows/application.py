@@ -202,7 +202,7 @@ class AppWindow(Singleton, QMainWindow):
             app().windows['readme_viewer'].show()
             app().show_dialog('information.first_launch', self)
 
-        elif not self.shown_key_warning:
+        elif not self.shown_key_warning and not app().client.session_token:
             app().show_dialog('warnings.empty_token', self)
             self.__class__.shown_key_warning = True
 

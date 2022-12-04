@@ -89,7 +89,7 @@ class SettingsWindow(Singleton, QWidget):
             """Toggle hiding and showing the session key."""
             if not self.token_field.isEnabled():
                 self.token_field.setAlignment(Qt.AlignmentFlag.AlignLeft)
-                self.token_field.setText(str(app().client.session_token))
+                self.token_field.setText(app().client.session_token or '')
                 self.token_field.setDisabled(False)
                 self.token_field.setFocus()
                 self.token_set_button.setDisabled(False)
@@ -147,7 +147,7 @@ class SettingsWindow(Singleton, QWidget):
             (open_editor_button := QPushButton(self)): {
                 'clicked': DeferredCallable(QDesktopServices.openUrl, lambda: QUrl(app().settings.path.as_uri()))
             },
-            (key_show_button := QPushButton(self)): {
+            (edit_token_button := QPushButton(self)): {
                 'clicked': toggle_token_visibility
             },
             self.token_set_button: {
@@ -190,7 +190,7 @@ class SettingsWindow(Singleton, QWidget):
             import_button.setText: 'gui.settings.import',
             export_button.setText: 'gui.settings.export',
             open_editor_button.setText: 'gui.settings.open_editor',
-            key_show_button.setText: 'gui.settings.auth.edit',
+            edit_token_button.setText: 'gui.settings.auth.edit',
             self.token_set_button.setText: 'gui.settings.auth.set',
             self.token_clear_button.setText: 'gui.settings.auth.clear_token'
         })
@@ -204,7 +204,7 @@ class SettingsWindow(Singleton, QWidget):
                 'items': [self.token_field, self.token_set_button]
             },
             (bottom := QVBoxLayout()): {
-                'items': [key_show_button, key_layout, token_layout]
+                'items': [edit_token_button, key_layout, token_layout]
             },
 
             # Add middle widgets
