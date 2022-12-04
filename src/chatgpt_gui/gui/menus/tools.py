@@ -53,7 +53,7 @@ def create_app_shortcut() -> None:
     # Create shortcut to launch this package, with proper kwargs
     create_shortcut(target=shortcut_path, arguments=f'-m {CG_PACKAGE_NAME}',
                     name=tr('app.name'), description=tr('app.description'),
-                    icon=CG_RESOURCE_PATH / 'icons/hi.ico', terminal=False,
+                    icon=CG_RESOURCE_PATH / 'icons/openai.ico', terminal=False,
                     desktop=do_desktop, start_menu=do_start_menu)
 
 
