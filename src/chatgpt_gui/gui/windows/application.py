@@ -171,16 +171,26 @@ class AppWindow(Singleton, QMainWindow):
             self: {'centralWidget': main_widget}
         })
 
+    def append_to_output(self, text: str) -> None:
+        """Append some new text to the output.
+
+        Adds two newlines after the text for better differentiation between messages.
+
+        :param text: Text to append to output.
+        """
+        self.output.setText(f'{self.output.toPlainText()}{text}\n\n')
+
     def send_message(self) -> None:
         """Send a message to the client using the current input text.
 
         Clears the input and disables after sending.
         """
-        msg: str = self.input.text()
+        message: str = self.input.text()
         self.input.clear()
         self.input.setDisabled(True)
+        self.append_to_output(f'You: {message}')
 
-        app().client.send_message(msg)
+        app().client.send_message(message)
 
     def receive_message(self, message: str) -> None:
         """Receive a response from the client.
@@ -189,8 +199,10 @@ class AppWindow(Singleton, QMainWindow):
 
         :param message: Message received.
         """
+        self.append_to_output(f'OpenAI: {message}')
+
         self.input.setDisabled(False)
-        self.output.setText(self.output.toPlainText() + f'{message}\n\n')
+        self.input.setFocus()
 
     # # # # # Events
 
