@@ -10,7 +10,6 @@ __all__ = (
 )
 
 import json
-import shutil
 import subprocess
 import sys
 from collections import defaultdict
@@ -150,9 +149,6 @@ class GetterApp(Singleton, QApplication):
         if not self.settings['ignore_updates']:
             self.version_checker.newerVersion.connect(self._upgrade_version_dialog)
 
-        # Register formats for use in shutil
-        self._register_archive_formats()
-
         # Must load client last, but before windows
         self.load_env(verbose=True)
         self.client = Client(self)
@@ -215,19 +211,6 @@ class GetterApp(Singleton, QApplication):
         """Translate the HTTP code map to the current language."""
         for code in (400, 401, 403, 404, 405, 406):
             http_code_map[code] = (http_code_map[code][0], self.translator(f'network.http.codes.{code}.description'))
-
-    def _register_archive_formats(self) -> None:
-        if not has_package('py7zr'):
-            self.missing_package_dialog('py7zr', 'Importing/Exporting 7Zip Archives')
-        if not has_package('py7zr'):  # During the dialog, the package may be dynamically installed by user.
-            return
-
-        from py7zr import pack_7zarchive
-        from py7zr import unpack_7zarchive
-
-        # Register .7z archive support
-        shutil.register_archive_format('7z', pack_7zarchive, description='7Zip Archive File')
-        shutil.register_unpack_format('7z', ['7z'], unpack_7zarchive, description='7Zip Archive File')
 
     def init_translations(self, translation_calls: dict[Callable, str | tuple[Any, ...]]) -> None:
         """Initialize the translation of all objects.
