@@ -22,6 +22,7 @@ from ...models import Singleton
 from ...utils import init_layouts
 from ...utils import init_objects
 from ..aliases import app
+from ..aliases import tr
 from ..menus import HelpContextMenu
 from ..menus import ToolsContextMenu
 from ..widgets import ExceptionLogger
@@ -147,16 +148,15 @@ class AppWindow(Singleton, QMainWindow):
         self.output, self.input = ExternalTextBrowser(self), PasteLineEdit(self)
 
         init_objects({
-            self.output: {
-                'placeholderText': 'AI Response will appear here...',
-            },
             self.input: {
-                'placeholderText': 'Send a message...',
                 'returnPressed': self.send_message
             }
         })
 
-        app().init_translations({})
+        app().init_translations({
+            self.output.setPlaceholderText: 'gui.output_text.placeholder',
+            self.input.setPlaceholderText: 'gui.input_field.placeholder'
+        })
 
         init_layouts({
             # Main layout
@@ -188,7 +188,7 @@ class AppWindow(Singleton, QMainWindow):
         message: str = self.input.text()
         self.input.clear()
         self.input.setDisabled(True)
-        self.append_to_output(f'You: {message}')
+        self.append_to_output(tr('gui.output_text.you_prompt', message))
 
         app().client.send_message(message)
 
@@ -199,7 +199,7 @@ class AppWindow(Singleton, QMainWindow):
 
         :param message: Message received.
         """
-        self.append_to_output(f'OpenAI: {message}')
+        self.append_to_output(tr('gui.output_text.ai_prompt', message))
 
         self.input.setDisabled(False)
         self.input.setFocus()
