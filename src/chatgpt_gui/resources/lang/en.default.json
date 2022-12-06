@@ -58,6 +58,8 @@
     "gui.output_text.you_prompt": "You: %s",
     "gui.readme_viewer.close": "Close",
     "gui.readme_viewer.title": "README Viewer",
+    "gui.send_input": "Send",
+    "gui.toggle_multiline": "Toggle Multiline",
 
     "gui.menu_bar.title": "Menu Bar",
     "gui.menus.help": "Help",
