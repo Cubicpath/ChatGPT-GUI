@@ -22,12 +22,10 @@ from ...models import Singleton
 from ...utils import init_layouts
 from ...utils import init_objects
 from ..aliases import app
-from ..aliases import tr
 from ..menus import HelpContextMenu
 from ..menus import ToolsContextMenu
 from ..widgets import ConversationView
 from ..widgets import ExceptionLogger
-from ..widgets import PasteLineEdit
 
 
 def size_label_for(num: int) -> str:
@@ -157,16 +155,12 @@ class AppWindow(Singleton, QMainWindow):
         # This works in the standard AST, but is a seemingly arbitrary limitation set by the interpreter.
         # See:
         # https://stackoverflow.com/questions/64055314/why-cant-pythons-walrus-operator-be-used-to-set-instance-attributes#answer-66617839
-        self.input = PasteLineEdit(self)
         self.conversation_tabs = QTabWidget(self)
 
         init_objects({
             self.conversation_tabs: {
                 'tabsClosable': True,
                 'tabCloseRequested': remove_conversation
-            },
-            self.input: {
-                'returnPressed': self.send_message
             },
 
             (add_conversation_button := QPushButton(self.conversation_tabs)): {
@@ -180,14 +174,10 @@ class AppWindow(Singleton, QMainWindow):
         add_conversation()
         self.conversation_tabs.setCornerWidget(add_conversation_button, Qt.Corner.TopLeftCorner)
 
-        app().init_translations({
-            self.input.setPlaceholderText: 'gui.input_field.placeholder'
-        })
-
         init_layouts({
             # Main layout
             (layout := QVBoxLayout()): {
-                'items': [self.conversation_tabs, self.input]
+                'items': (self.conversation_tabs,)
             }
         })
 
@@ -196,19 +186,6 @@ class AppWindow(Singleton, QMainWindow):
 
             self: {'centralWidget': main_widget}
         })
-
-    def send_message(self) -> None:
-        """Send a message to the client using the current input text.
-
-        Clears the input and disables after sending.
-        """
-        message: str = self.input.text()
-        self.input.clear()
-        self.conversation_tabs.currentWidget().append_to_view(  # type: ignore
-            tr('gui.output_text.you_prompt', message, key_eval=False),
-        )
-
-        app().client.send_message(message, self.conversation_tabs.currentWidget().conversation)  # type: ignore
 
     # # # # # Events
 
