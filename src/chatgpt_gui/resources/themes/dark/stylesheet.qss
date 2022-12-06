@@ -1587,7 +1587,7 @@ QToolButton::up-arrow,
 QToolButton::down-arrow
 {
     /* Undo the padding when we have an arrow */
-    padding-right: -1.2em;
+    padding-right: -0.12m;
 }
 
 QToolButton::right-arrow
