@@ -5,122 +5,26 @@
 from __future__ import annotations
 
 __all__ = (
-    'Action',
     'Client',
-    'Conversation',
-    'Message',
 )
 
 import json
 import os
-from dataclasses import dataclass
-from dataclasses import field
 from typing import Any
 from uuid import UUID
-from uuid import uuid4
 
 from PySide6.QtCore import *
 
-from ..constants import *
-from ..models import CaseInsensitiveDict
-from ..utils import decode_url
-from ..utils import hide_windows_file
-from .manager import NetworkSession
-from .manager import Request
-from .manager import Response
-
-
-@dataclass
-class Message:
-    """ChatGPT message sent or received."""
-
-    uuid: UUID = field(default_factory=uuid4)
-    text: str | None = field(default=None)
-    role: str = field(default='user')
-
-    @classmethod
-    def from_json(cls, data: dict[str, Any]) -> Message:
-        """Load data from a JSON representation."""
-        return cls(
-            uuid=UUID(data['id']),
-            text='\n\n'.join(data['content']['parts']),
-            role=data['role']
-        )
-
-    def to_json(self) -> dict[str, Any]:
-        """Dump data into a JSON representation.
-
-        The ``content`` key is omitted if the ``text`` attribute is ``None``.
-        """
-        data: dict[str, Any] = {
-            'id': str(self.uuid),
-            'role': self.role
-        }
-
-        if self.text is not None:
-            data['content'] = {
-                'content_type': 'text',
-                'parts': [self.text]
-            }
-
-        return data
-
-
-@dataclass
-class Conversation:
-    """ChatGPT conversation.
-
-    Includes a list of all messages sent and received in the conversation.
-    """
-
-    uuid: UUID | None = field(default=None)
-    messages: list[Message] = field(default_factory=list)
-
-    @classmethod
-    def from_json(cls, data: dict[str, Any]) -> Conversation:
-        """Load data from a JSON representation."""
-        return cls(
-            uuid=UUID(data['id']),
-            messages=[Message.from_json(message) for message in data['messages']],
-        )
-
-    def to_json(self) -> dict[str, Any]:
-        """Dump data into a JSON representation."""
-        return {
-            'id': str(self.uuid),
-            'messages': [message.to_json() for message in self.messages],
-        }
-
-
-@dataclass
-class Action:
-    """Action sent to ChatGPT.
-
-    If no conversation is provided, ChatGPT creates a new conversation for you in its response.
-    """
-
-    model: str
-    conversation: Conversation = field(default_factory=Conversation)
-    messages: list[Message] = field(default_factory=list)
-    parent: Message = field(default_factory=Message)
-    type: str = field(default='next')
-
-    def to_json(self) -> dict[str, Any]:
-        """Dump data into a JSON representation.
-
-        The ``conversation_id`` key is omitted if the ``conversation`` attribute is ``None``.
-        """
-        data = {
-            'action': self.type,
-            'messages': [message.to_json() for message in self.messages],
-            'model': self.model,
-            'parent_message_id': str(self.parent.uuid)
-        }
-
-        if self.conversation.uuid is not None:
-            data['conversation_id'] = str(self.conversation.uuid)
-
-        return data
+from ...constants import *
+from ...models import CaseInsensitiveDict
+from ...utils import decode_url
+from ...utils import hide_windows_file
+from ..manager import NetworkSession
+from ..manager import Request
+from ..manager import Response
+from .structures import Action
+from .structures import Conversation
+from .structures import Message
 
 
 class Client(QObject):
@@ -160,7 +64,7 @@ class Client(QObject):
             'Connection': 'keep-alive',
             'DNT': '1',
             'Host': self.host,
-            'If-None-Match': 'zh3ivhmesm13w',
+            'If-None-Match': '"zh3ivhmesm13w"',
             'Origin': 'https://chat.openai.com',
             'Referer': 'https://chat.openai.com/chat',
             'Sec-Fetch-Dest': 'empty',
@@ -169,6 +73,7 @@ class Client(QObject):
             'Sec-GPC': '1',
             'TE': 'trailers',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0',
+            'X-OpenAI-Assistant-App-Id': '',
         })
 
         if self.session_token:
