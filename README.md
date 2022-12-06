@@ -60,7 +60,7 @@ Guide:
 - Open the Settings window, unlock the input by pressing the "Edit Session Token" button, then paste the copied value.
 - Press the Set button, and you should now be authenticated!
 
-![Settings](https://i.imgur.com/RR6tWYSl.png)
+![Settings](https://i.imgur.com/5Oa8TP1l.png)
 
 ### Themes:
 Themes are a way to style already-existing elements (Think CSS). They are held in a directory with their resources
