@@ -5,13 +5,18 @@
 from __future__ import annotations
 
 __all__ = (
+    'Action',
     'Client',
+    'Conversation',
+    'Message',
 )
 
 import json
 import os
-import uuid
 from typing import Any
+from typing import NamedTuple
+from uuid import UUID
+from uuid import uuid4
 
 from PySide6.QtCore import *
 
@@ -22,6 +27,96 @@ from ..utils import hide_windows_file
 from .manager import NetworkSession
 from .manager import Request
 from .manager import Response
+
+
+class Message(NamedTuple):
+    """ChatGPT message sent or received."""
+
+    uuid: UUID
+    text: str | None = None
+    role: str = 'user'
+
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> Message:
+        """Load data from a JSON representation."""
+        return cls(
+            uuid=UUID(data['id']),
+            text='\n\n'.join(data['content']['parts']),
+            role=data['role']
+        )
+
+    def to_json(self) -> dict[str, Any]:
+        """Dump data into a JSON representation.
+
+        The ``content`` key is omitted if the ``text`` attribute is ``None``.
+        """
+        data: dict[str, Any] = {
+            'id': str(self.uuid),
+            'role': self.role
+        }
+
+        if self.text is not None:
+            data['content'] = {
+                'content_type': 'text',
+                'parts': [self.text]
+            }
+
+        return data
+
+
+class Conversation(NamedTuple):
+    """ChatGPT conversation.
+
+    Includes a list of all messages sent and received in the conversation.
+    """
+
+    uuid: UUID
+    messages: list[Message]
+
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> Conversation:
+        """Load data from a JSON representation."""
+        return cls(
+            uuid=UUID(data['id']),
+            messages=[Message.from_json(message) for message in data['messages']],
+        )
+
+    def to_json(self) -> dict[str, Any]:
+        """Dump data into a JSON representation."""
+        return {
+            'id': str(self.uuid),
+            'messages': [message.to_json() for message in self.messages],
+        }
+
+
+class Action(NamedTuple):
+    """Action sent to ChatGPT.
+
+    If no conversation is provided, ChatGPT creates a new conversation for you in its response.
+    """
+
+    messages: list[Message]
+    parent: Message
+    model: str
+    conversation: Conversation | None = None
+    type: str = 'next'
+
+    def to_json(self) -> dict[str, Any]:
+        """Dump data into a JSON representation.
+
+        The ``conversation_id`` key is omitted if the ``conversation`` attribute is ``None``.
+        """
+        data = {
+            'action': self.type,
+            'messages': [message.to_json() for message in self.messages],
+            'model': self.model,
+            'parent_message_id': str(self.parent.uuid)
+        }
+
+        if self.conversation is not None:
+            data['conversation_id'] = str(self.conversation.uuid)
+
+        return data
 
 
 class Client(QObject):
@@ -43,9 +138,9 @@ class Client(QObject):
         super().__init__(parent)
         self.receivedMessage.connect(print)
 
+        self._conversation: Conversation | None = None
+        self.conversations: dict[UUID, Conversation] = {}
         self.host: str = 'chat.openai.com'
-        self.conversation_id: uuid.UUID | None = None
-        self.last_message_id: uuid.UUID = uuid.uuid4()
         self.models: list[str] | None = None
 
         self._first_request: bool = True
@@ -75,6 +170,69 @@ class Client(QObject):
 
         if self.session_token:
             self.set_cookie('__Secure-next-auth.session-token', self.session_token)
+
+    @property
+    def api_root(self) -> str:
+        """Root of sent API requests."""
+        return f'https://{self.host}/'
+
+    @property
+    def access_token(self) -> str | None:
+        """Bearer token to authenticate self to API endpoints."""
+        return self._access_token
+
+    @access_token.setter
+    def access_token(self, value: str) -> None:
+        value = decode_url(value)
+
+        self._access_token = value.strip()
+        self.session.headers['Authorization'] = f'Bearer {self._access_token}'
+
+    @access_token.deleter
+    def access_token(self) -> None:
+        self._access_token = None
+        if 'Authorization' in self.session.headers:
+            self.session.headers.pop('Authorization')
+
+    @property
+    def conversation(self) -> Conversation | None:
+        """Return the current conversation."""
+        return self._conversation
+
+    @conversation.setter
+    def conversation(self, value: Conversation) -> None:
+        self._conversation = self.conversations[value.uuid] = value
+
+    @conversation.deleter
+    def conversation(self) -> None:
+        if self._conversation is None:
+            raise ValueError('Cannot delete a null conversation.')
+
+        del self.conversations[self._conversation.uuid]
+        self._conversation = None
+
+    @property
+    def session_token(self) -> str | None:
+        """Bearer token to authenticate self to API endpoints."""
+        return self._session_token
+
+    @session_token.setter
+    def session_token(self, value: str) -> None:
+        value = decode_url(value)
+
+        self._session_token = value.strip()
+        self.set_cookie('__Secure-next-auth.session-token', value)
+
+        hide_windows_file(CG_SESSION_PATH, unhide=True)
+        CG_SESSION_PATH.write_text(self._session_token, encoding='utf8')
+        hide_windows_file(CG_SESSION_PATH)
+
+    @session_token.deleter
+    def session_token(self) -> None:
+        self._session_token = None
+        self.delete_cookie('__Secure-next-auth.session-token')
+        if CG_SESSION_PATH.is_file():
+            CG_SESSION_PATH.unlink()
 
     def _get(self, path: str, update_auth_on_401: bool = True, **kwargs) -> Response:
         """Get a :py:class:`Response` from ChatGPT.
@@ -108,57 +266,51 @@ class Client(QObject):
         """
         return self._get('backend-api/models').json['models']
 
-    def send_message(self, message: str) -> None:
+    def send_message(self, message_text: str) -> None:
         """Send a message and emit the AI's response through `the `receivedMessage`` signal.
 
         Automatically handles the conversation id and last message id.
 
-        :param message: Message to send.
+        :param message_text: Message to send.
+        :raises ValueError: If Response couldn't be parsed as a text/event-stream.
         """
         if self.models is None:
             self.models = [model['slug'] for model in self.get_models()]
 
-        message_id: uuid.UUID = uuid.uuid4()
-        message_data = {
-            'action': 'next',
-            'messages': [
-                {
-                    'content': {
-                        'content_type': 'text',
-                        'parts': [message]
-                    },
-                    'id': str(message_id),
-                    'role': 'user'
-                }
-            ],
-            'model': self.models[0],
-            'parent_message_id': str(self.last_message_id)
-        }
+        if self.conversation is not None and self.conversation.messages:
+            parent_message: Message = self.conversation.messages[-1]
+        else:
+            parent_message = Message(uuid4())
 
-        if self.conversation_id is not None:
-            message_data['conversation_id'] = str(self.conversation_id)
+        message: Message = Message(uuid4(), message_text)
+        action: Action = Action([message], parent_message, self.models[0], self.conversation)
 
         request: Request = Request(
             'POST', self.api_root + 'backend-api/conversation',
             headers={'Accept': 'text/event-stream', 'Content-type': 'application/json'},
-            json=message_data, timeout=60.0,
+            json=action.to_json(), timeout=60.0,
         )
 
         response: Response = request.send(self.session, wait_until_finished=True)
 
         # Get the finished stream from the text/event-stream
         # Index -1 Is empty string, as the response ends with 2 newlines
-        # Index -2 Is the "Done", signifier
+        # Index -2 Is the "[DONE]", signifier
         # Index -3 Is the finished product
-        last_stream: str = response.text.split('\n\n')[-3]
+        try:
+            last_stream: str = response.text.split('\n\n')[-3]
+        except IndexError as e:
+            raise ValueError(f'Message response is not a text/event-stream ({response.text}).') from e
 
-        json_data: dict[str, Any] = json.loads(last_stream.removeprefix('data: ').strip())
-        response_message: str = '\n\n'.join(json_data['message']['content']['parts'])
+        json_response: dict[str, Any] = json.loads(last_stream.removeprefix('data: ').strip())
+        response_message: Message = Message.from_json(json_response['message'])
 
-        self.last_message_id = json_data['message']['id']
-        self.conversation_id = uuid.UUID(json_data['conversation_id'])
+        convo_id: UUID = UUID(json_response['conversation_id'])
+        convo = self.conversation = self.conversations.get(convo_id, Conversation(convo_id, []))
+        convo.messages.extend(action.messages)
+        convo.messages.append(response_message)
 
-        self.receivedMessage.emit(response_message)
+        self.receivedMessage.emit(response_message.text)
 
     def hidden_token(self) -> str:
         """:return: The first and last 3 characters of the session token, seperated by periods."""
@@ -187,49 +339,3 @@ class Client(QObject):
     def set_cookie(self, name: str, value: str) -> None:
         """Set cookie value in Cookie jar."""
         self.session.set_cookie(name, value, self.host)
-
-    @property
-    def api_root(self) -> str:
-        """Root of sent API requests."""
-        return f'https://{self.host}/'
-
-    @property
-    def access_token(self) -> str | None:
-        """Bearer token to authenticate self to API endpoints."""
-        return self._access_token
-
-    @access_token.setter
-    def access_token(self, value: str) -> None:
-        value = decode_url(value)
-
-        self._access_token = value.strip()
-        self.session.headers['Authorization'] = f'Bearer {self._access_token}'
-
-    @access_token.deleter
-    def access_token(self) -> None:
-        self._access_token = None
-        if 'Authorization' in self.session.headers:
-            self.session.headers.pop('Authorization')
-
-    @property
-    def session_token(self) -> str | None:
-        """Bearer token to authenticate self to API endpoints."""
-        return self._session_token
-
-    @session_token.setter
-    def session_token(self, value: str) -> None:
-        value = decode_url(value)
-
-        self._session_token = value.strip()
-        self.set_cookie('__Secure-next-auth.session-token', value)
-
-        hide_windows_file(CG_SESSION_PATH, unhide=True)
-        CG_SESSION_PATH.write_text(self._session_token, encoding='utf8')
-        hide_windows_file(CG_SESSION_PATH)
-
-    @session_token.deleter
-    def session_token(self) -> None:
-        self._session_token = None
-        self.delete_cookie('__Secure-next-auth.session-token')
-        if CG_SESSION_PATH.is_file():
-            CG_SESSION_PATH.unlink()
