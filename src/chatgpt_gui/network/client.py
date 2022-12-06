@@ -13,8 +13,9 @@ __all__ = (
 
 import json
 import os
+from dataclasses import dataclass
+from dataclasses import field
 from typing import Any
-from typing import NamedTuple
 from uuid import UUID
 from uuid import uuid4
 
@@ -29,12 +30,13 @@ from .manager import Request
 from .manager import Response
 
 
-class Message(NamedTuple):
+@dataclass
+class Message:
     """ChatGPT message sent or received."""
 
-    uuid: UUID
-    text: str | None = None
-    role: str = 'user'
+    uuid: UUID = field(default_factory=uuid4)
+    text: str | None = field(default=None)
+    role: str = field(default='user')
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Message:
@@ -64,14 +66,15 @@ class Message(NamedTuple):
         return data
 
 
-class Conversation(NamedTuple):
+@dataclass
+class Conversation:
     """ChatGPT conversation.
 
     Includes a list of all messages sent and received in the conversation.
     """
 
-    uuid: UUID
-    messages: list[Message]
+    uuid: UUID | None = field(default=None)
+    messages: list[Message] = field(default_factory=list)
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Conversation:
@@ -89,17 +92,18 @@ class Conversation(NamedTuple):
         }
 
 
-class Action(NamedTuple):
+@dataclass
+class Action:
     """Action sent to ChatGPT.
 
     If no conversation is provided, ChatGPT creates a new conversation for you in its response.
     """
 
-    messages: list[Message]
-    parent: Message
     model: str
-    conversation: Conversation | None = None
-    type: str = 'next'
+    conversation: Conversation = field(default_factory=Conversation)
+    messages: list[Message] = field(default_factory=list)
+    parent: Message = field(default_factory=Message)
+    type: str = field(default='next')
 
     def to_json(self) -> dict[str, Any]:
         """Dump data into a JSON representation.
@@ -113,7 +117,7 @@ class Action(NamedTuple):
             'parent_message_id': str(self.parent.uuid)
         }
 
-        if self.conversation is not None:
+        if self.conversation.uuid is not None:
             data['conversation_id'] = str(self.conversation.uuid)
 
         return data
@@ -122,7 +126,7 @@ class Action(NamedTuple):
 class Client(QObject):
     """Asynchronous HTTP REST Client that interfaces with ChatGPT."""
 
-    receivedMessage = Signal(str)
+    receivedMessage = Signal(Message, Conversation)
 
     def __init__(self, parent: QObject, **kwargs) -> None:
         """Initialize OpenAI Client.
@@ -136,9 +140,8 @@ class Client(QObject):
         :keyword session_token: Session token, allows for creation of access tokens.
         """
         super().__init__(parent)
-        self.receivedMessage.connect(print)
+        self.receivedMessage.connect(lambda msg, convo: print(f'Conversation: {convo.uuid} | {msg}'))
 
-        self._conversation: Conversation | None = None
         self.conversations: dict[UUID, Conversation] = {}
         self.host: str = 'chat.openai.com'
         self.models: list[str] | None = None
@@ -195,23 +198,6 @@ class Client(QObject):
             self.session.headers.pop('Authorization')
 
     @property
-    def conversation(self) -> Conversation | None:
-        """Return the current conversation."""
-        return self._conversation
-
-    @conversation.setter
-    def conversation(self, value: Conversation) -> None:
-        self._conversation = self.conversations[value.uuid] = value
-
-    @conversation.deleter
-    def conversation(self) -> None:
-        if self._conversation is None:
-            raise ValueError('Cannot delete a null conversation.')
-
-        del self.conversations[self._conversation.uuid]
-        self._conversation = None
-
-    @property
     def session_token(self) -> str | None:
         """Bearer token to authenticate self to API endpoints."""
         return self._session_token
@@ -266,7 +252,7 @@ class Client(QObject):
         """
         return self._get('backend-api/models').json['models']
 
-    def send_message(self, message_text: str) -> None:
+    def send_message(self, message_text: str, conversation: Conversation) -> None:
         """Send a message and emit the AI's response through `the `receivedMessage`` signal.
 
         Automatically handles the conversation id and last message id.
@@ -277,13 +263,13 @@ class Client(QObject):
         if self.models is None:
             self.models = [model['slug'] for model in self.get_models()]
 
-        if self.conversation is not None and self.conversation.messages:
-            parent_message: Message = self.conversation.messages[-1]
+        if conversation.messages:
+            parent_message: Message = conversation.messages[-1]
         else:
-            parent_message = Message(uuid4())
+            parent_message = Message()
 
-        message: Message = Message(uuid4(), message_text)
-        action: Action = Action([message], parent_message, self.models[0], self.conversation)
+        message: Message = Message(text=message_text)
+        action: Action = Action(self.models[0], conversation, [message], parent_message)
 
         request: Request = Request(
             'POST', self.api_root + 'backend-api/conversation',
@@ -305,12 +291,16 @@ class Client(QObject):
         json_response: dict[str, Any] = json.loads(last_stream.removeprefix('data: ').strip())
         response_message: Message = Message.from_json(json_response['message'])
 
-        convo_id: UUID = UUID(json_response['conversation_id'])
-        convo = self.conversation = self.conversations.get(convo_id, Conversation(convo_id, []))
-        convo.messages.extend(action.messages)
-        convo.messages.append(response_message)
+        conversation.messages.extend(action.messages)
+        conversation.messages.append(response_message)
 
-        self.receivedMessage.emit(response_message.text)
+        if conversation.uuid is None:
+            conversation.uuid = UUID(json_response['conversation_id'])
+
+        if conversation.uuid not in self.conversations:
+            self.conversations[conversation.uuid] = conversation
+
+        self.receivedMessage.emit(response_message, conversation)
 
     def hidden_token(self) -> str:
         """:return: The first and last 3 characters of the session token, seperated by periods."""

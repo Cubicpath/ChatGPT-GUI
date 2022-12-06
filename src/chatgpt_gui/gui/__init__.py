@@ -6,6 +6,8 @@
 __all__ = (
     'app',
     'AppWindow',
+    'ComboBox',
+    'ConversationView',
     'ExceptionLogger',
     'ExceptionReporter',
     'ExternalTextBrowser',
@@ -18,7 +20,8 @@ __all__ = (
     'SettingsWindow',
     'Theme',
     'ToolsContextMenu',
-    'tr'
+    'tr',
+    'TranslatableComboBox',
 )
 
 from .aliases import app
@@ -27,10 +30,13 @@ from .app import GetterApp
 from .app import Theme
 from .menus import HelpContextMenu
 from .menus import ToolsContextMenu
+from .widgets import ComboBox
+from .widgets import ConversationView
 from .widgets import ExceptionLogger
 from .widgets import ExternalTextBrowser
 from .widgets import HistoryComboBox
 from .widgets import PasteLineEdit
+from .widgets import TranslatableComboBox
 from .windows import AppWindow
 from .windows import ChangelogViewer
 from .windows import ExceptionReporter

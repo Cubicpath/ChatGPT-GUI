@@ -25,8 +25,8 @@ from ..aliases import app
 from ..aliases import tr
 from ..menus import HelpContextMenu
 from ..menus import ToolsContextMenu
+from ..widgets import ConversationView
 from ..widgets import ExceptionLogger
-from ..widgets import ExternalTextBrowser
 from ..widgets import PasteLineEdit
 
 
@@ -56,8 +56,7 @@ class AppWindow(Singleton, QMainWindow):
         super().__init__()
 
         self.resize(size)
-
-        app().client.receivedMessage.connect(self.receive_message)
+        self.conversation_counter: int = 0
 
         self._init_toolbar()
         self._init_ui()
@@ -140,28 +139,55 @@ class AppWindow(Singleton, QMainWindow):
     # noinspection PyTypeChecker
     def _init_ui(self) -> None:
         """Initialize the UI, including Layouts and widgets."""
+        def add_conversation():
+            self.conversation_counter += 1
+            self.conversation_tabs.addTab(ConversationView(), f'Conversation {self.conversation_counter}')
+
+        def remove_conversation(index: int):
+            view: ConversationView = self.conversation_tabs.widget(index)  # type: ignore
+            view.deleteLater()
+
+            self.conversation_tabs.removeTab(index)
+            if not self.conversation_tabs.count():
+                self.conversation_counter = 0
+                add_conversation()
+
         # Define widget attributes
         # Cannot be defined in init_objects() as walrus operators are not allowed for object attribute assignment.
         # This works in the standard AST, but is a seemingly arbitrary limitation set by the interpreter.
         # See:
         # https://stackoverflow.com/questions/64055314/why-cant-pythons-walrus-operator-be-used-to-set-instance-attributes#answer-66617839
-        self.output, self.input = ExternalTextBrowser(self), PasteLineEdit(self)
+        self.input = PasteLineEdit(self)
+        self.conversation_tabs = QTabWidget(self)
 
         init_objects({
+            self.conversation_tabs: {
+                'tabsClosable': True,
+                'tabCloseRequested': remove_conversation
+            },
             self.input: {
                 'returnPressed': self.send_message
+            },
+
+            (add_conversation_button := QPushButton(self.conversation_tabs)): {
+                'size': {'fixed': (None, 26)},
+                'icon': app().icon_store['add'],
+                'clicked': add_conversation
             }
+
         })
 
+        add_conversation()
+        self.conversation_tabs.setCornerWidget(add_conversation_button, Qt.Corner.TopLeftCorner)
+
         app().init_translations({
-            self.output.setPlaceholderText: 'gui.output_text.placeholder',
             self.input.setPlaceholderText: 'gui.input_field.placeholder'
         })
 
         init_layouts({
             # Main layout
             (layout := QVBoxLayout()): {
-                'items': [self.output, self.input]
+                'items': [self.conversation_tabs, self.input]
             }
         })
 
@@ -171,17 +197,6 @@ class AppWindow(Singleton, QMainWindow):
             self: {'centralWidget': main_widget}
         })
 
-    def append_to_output(self, text: str) -> None:
-        """Append some new text to the output.
-
-        Adds two newlines after the text for better differentiation between messages.
-        Also scrolls down to bottom for you.
-
-        :param text: Text to append to output.
-        """
-        self.output.setText(f'{self.output.toPlainText()}{text}\n\n')
-        self.output.verticalScrollBar().setValue(self.output.verticalScrollBar().maximum())
-
     def send_message(self) -> None:
         """Send a message to the client using the current input text.
 
@@ -189,22 +204,11 @@ class AppWindow(Singleton, QMainWindow):
         """
         message: str = self.input.text()
         self.input.clear()
-        self.input.setDisabled(True)
-        self.append_to_output(tr('gui.output_text.you_prompt', message, key_eval=False))
+        self.conversation_tabs.currentWidget().append_to_view(  # type: ignore
+            tr('gui.output_text.you_prompt', message, key_eval=False),
+        )
 
-        app().client.send_message(message)
-
-    def receive_message(self, message: str) -> None:
-        """Receive a response from the client.
-
-        Re-enables the input and appends the response to the output.
-
-        :param message: Message received.
-        """
-        self.append_to_output(tr('gui.output_text.ai_prompt', message, key_eval=False))
-
-        self.input.setDisabled(False)
-        self.input.setFocus()
+        app().client.send_message(message, self.conversation_tabs.currentWidget().conversation)  # type: ignore
 
     # # # # # Events
 
