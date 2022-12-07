@@ -9,12 +9,19 @@ __all__ = (
 )
 
 import re
+import base64
+from typing import Final
+from urllib.parse import quote
 
+from bs4 import BeautifulSoup
 from PySide6.QtCore import *
 from PySide6.QtGui import *
+from tls_client import Session
 
-from ..manager import NetworkSession
-from ..manager import Response
+from ...constants import *
+
+
+_STATE_PATTERN: Final[re.Pattern] = re.compile(r'state=(.*)')
 
 
 class Authenticator(QObject):
@@ -23,8 +30,14 @@ class Authenticator(QObject):
     Based on https://github.com/rawandahmad698/PyChatGPT
     """
 
+    authenticationSuccessful = Signal(str)
+    """Emits the session_token on success of Authenticator.authenticate()."""
+
     captchaEncountered = Signal(QPixmap)
+    """Emits a captcha that needs to be solved."""
+
     solveCaptcha = Signal(str)
+    """Emit this signal with the solved captcha from captchaEncountered."""
 
     def __init__(self, parent: QObject | None = None, email: str | None = None, password: str | None = None):
         """Create a new :py:class:`Authenticator`.
@@ -32,155 +45,213 @@ class Authenticator(QObject):
         email and password attributes must be filled out before calling ``authenticate()``.
         """
         super().__init__(parent)
+
         self.email: str | None = email
         self.password: str | None = password
-        self.session: NetworkSession = NetworkSession(self)
-        self.session.headers = {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-            'Accept-Encoding': ', '.join(('gzip', 'deflate', 'br')),
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Connection': 'keep-alive',
-            'DNT': '1',
-            'Host': 'chat.openai.com',
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-site',
-            'Sec-GPC': '1',
-            'TE': 'trailers',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0',
-        }
+        self.session = Session(client_identifier='chrome_105')
 
-    def authenticate(self) -> None:
+    def authenticate(self):
         """Authenticate self to OpenAI using email and password.
 
         Steps:
             1. Get login page
-            2. Get auth0 urls
-            3. Get csrf token from endpoint
-            4. Post csrf token to signin page [FAILS 403]
-            5. Get state from url returned by login page
-            6. Solve CAPTCHA (not implemented)
-            7. Post email to signin page
-            8. Post email and password to login page to get new state
-            9. Resume authorization to finish
+            2. Get csrf token from endpoint
+            3. Post csrf token to signin page
+            4. Get state from url returned by login page
+            5. Solve CAPTCHA
+            6. Post email to signin page
+            7. Post email and password to login page to get new state
+            8. Resume authorization to finish
 
         :raises ValueError: If Email or password is not provided for Authenticator.
             If csrf token was not provided by endpoint call.
+            If auth token was not provided at end of function.
 
         :raises RuntimeError: If we couldn't get the login page.
             If we couldn't start auth0 login. Could be due to excessive login attempts.
             If there was an unsuccessful request to url provided by signin page.
+            If we couldn't access the login state.
             If the email address is not a valid user.
             If password or captcha was wrong.
         """
+        # -----------------------------------------------------------------------------------------
+        # Step 0:
+        # Check that all attributes are valid
+        # -----------------------------------------------------------------------------------------
         if not self.email or not self.password:
             raise ValueError('Email or password is not provided for Authenticator.')
 
+        email_encoded: str = quote(self.email)
+        password_encoded: str = quote(self.password)
+
+        # -----------------------------------------------------------------------------------------
+        # Step 1:
         # Make a request to https://chat.openai.com/auth/login
-        if not self.session.get('https://chat.openai.com/auth/login', wait_until_finished=True).ok:
+        # This will block us (403 Request Blocked) early if detected as bot.
+        # -----------------------------------------------------------------------------------------
+        if self.session.get(url='https://chat.openai.com/auth/login', headers={
+            'Host': 'ask.openai.com',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'User-Agent': CG_USER_AGENT,
+            'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+        }).status_code != 200:
             raise RuntimeError('Could not get login page.')
 
-        # Get auth0 urls
-        response: Response = self.session.get('https://chat.openai.com/api/auth/providers', wait_until_finished=True)
-        signin_url: str = response.json['auth0']['signinUrl']      # 'https://chat.openai.com/api/auth/signin/auth0'
-        callback_url: str = response.json['auth0']['callbackUrl']  # 'https://chat.openai.com/api/auth/callback/auth0'
-
+        # -----------------------------------------------------------------------------------------
+        # Step 2:
         # Get csrf token from endpoint
-        response: Response = self.session.get('https://chat.openai.com/api/auth/csrf', wait_until_finished=True)
-        if 'json' not in response.headers['Content-Type'] or (csrf := response.json['csrfToken']) is None:
+        # -----------------------------------------------------------------------------------------
+        response = self.session.get(url='https://chat.openai.com/api/auth/csrf', headers={
+            'Host': 'ask.openai.com',
+            'Accept': '*/*',
+            'Connection': 'keep-alive',
+            'User-Agent': CG_USER_AGENT,
+            'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+            'Referer': 'https://chat.openai.com/auth/login',
+            'Accept-Encoding': 'gzip, deflate, br',
+        })
+
+        if 'json' not in response.headers['Content-Type'] or (csrf := response.json()['csrfToken']) is None:
             raise ValueError('csrf token was not provided by endpoint call.')
 
-        # Start auth0 login with csrf token
-        # This currently returns 403 Request Blocked
-        response = self.session.post(
-            signin_url,
-            params={'prompt': 'login', 'redirect_uri': callback_url},
-            headers={
-                'Accept': '*/*',
-                'Content-Length': '100',
-                'Origin': 'https://chat.openai.com',
-                'Referer': 'https://chat.openai.com/auth/login'
-            }, data={
-                'callbackUrl': callback_url,
-                'csrfToken': csrf,
-                'json': 'true'
-            },
-            wait_until_finished=True
-        )
+        # -----------------------------------------------------------------------------------------
+        # Step 3:
+        # Start auth0 signin process with csrf token
+        # This directs us a new url to follow
+        # -----------------------------------------------------------------------------------------
+        response = self.session.post(url='https://chat.openai.com/api/auth/signin/auth0?prompt=login', headers={
+            'Host': 'ask.openai.com',
+            'Origin': 'https://chat.openai.com',
+            'Connection': 'keep-alive',
+            'Accept': '*/*',
+            'User-Agent': CG_USER_AGENT,
+            'Referer': 'https://chat.openai.com/auth/login',
+            'Content-Length': '100',
+            'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }, data=f'callbackUrl=%2F&csrfToken={csrf}&json=true')
 
-        if not response.ok or 'json' not in response.headers['Content-Type']:
+        if response.status_code != 200 or 'json' not in response.headers['Content-Type']:
             raise RuntimeError('Could not start auth0 login. Could be due to excessive login attempts.')
 
-        # Head to the given url to obtain our login state
-        next_url = response.json['url']
-        self.session.headers['Host'] = 'auth0.openai.com'
-        self.session.headers['Referer'] = 'https://chat.openai.com/'
+        new_url: str = response.json()['url']
 
-        response = self.session.get(next_url, wait_until_finished=True)
+        # -----------------------------------------------------------------------------------------
+        # Step 4:
+        # Follow new url to obtain our state key
+        # -----------------------------------------------------------------------------------------
+        response = self.session.get(url=new_url, headers={
+            'Host': 'auth0.openai.com',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Connection': 'keep-alive',
+            'User-Agent': CG_USER_AGENT,
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://chat.openai.com/',
+        })
 
-        if response.code != 302:
-            raise RuntimeError(f'Unsuccessful request to given url "{next_url}".')
+        if response.status_code != 302:
+            raise RuntimeError(f'Unsuccessful request to given url "{new_url}".')
 
-        state: str = self.session.cookies['__Secure-next-auth.state']
+        state: str = _STATE_PATTERN.findall(response.text)[0].split('"')[0]
 
-        # Use the state to get our login page
-        login_url = f'https://auth0.openai.com/u/login/identifier?state={state}'
-        self.session.get(login_url, wait_until_finished=True)
+        # -----------------------------------------------------------------------------------------
+        # Step 5:
+        # Go to our state's login page
+        # This has a chance to give us a captcha to solve
+        # -----------------------------------------------------------------------------------------
+        response = self.session.get(f'https://auth0.openai.com/u/login/identifier?state={state}', headers={
+            'Host': 'auth0.openai.com',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Connection': 'keep-alive',
+            'User-Agent': CG_USER_AGENT,
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://chat.openai.com/',
+        })
+
+        if response.status_code != 200:
+            raise RuntimeError('Couldn\'t make request to our login page.')
 
         captcha: str | None = None
-        # captcha = self.handle_captcha()
+        soup: BeautifulSoup = BeautifulSoup(response.text, 'lxml')
+        if soup.find('img', alt='captcha'):
+            captcha_svg: str = soup.find('img', alt='captcha')['src'].split(',')[1]  # type: ignore
+            decoded_svg: bytes = base64.decodebytes(captcha_svg.encode('ascii'))
 
-        check_user_data = {
-            'state': state,
-            'username': self.email,
-            'js-available': 'true',
-            'webauthn-available': 'true',
-            'is-brave': 'false',
-            'webauthn-platform-available': 'true',
-            'action': 'default'
-        }
+            pixmap: QPixmap = QPixmap()
+            pixmap.loadFromData(decoded_svg)
+            captcha = self.handle_captcha(pixmap)
+
+        # -----------------------------------------------------------------------------------------
+        # Step 6:
+        # Check if the username (email address) is a valid user
+        # Also send the solved captcha if given
+        # -----------------------------------------------------------------------------------------
+        payload = f'state={state}&username={email_encoded}&js-available=false' \
+                  f'&webauthn-available=true&is-brave=false&webauthn-platform-available=true&action=default'
 
         if captcha is not None:
-            check_user_data['captcha'] = captcha
+            payload = f'state={state}&username={email_encoded}&captcha={captcha}&js-available=true' \
+                      f'&webauthn-available=true&is-brave=false&webauthn-platform-available=true&action=default'
 
-        self.session.headers['Origin'] = 'https://auth0.openai.com'
+        response = self.session.post(f'https://auth0.openai.com/u/login/identifier?state={state}', headers={
+            'Host': 'auth0.openai.com',
+            'Origin': 'https://auth0.openai.com',
+            'Connection': 'keep-alive',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'User-Agent': CG_USER_AGENT,
+            'Referer': f'https://auth0.openai.com/u/login/identifier?state={state}',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }, data=payload)
 
-        # Continue auth0 login with state and solved captcha
-        response = self.session.post(
-            signin_url,
-            params={'prompt': 'login'},
-            headers={'Referer': login_url}, data=check_user_data,
-            wait_until_finished=True
-        )
-
-        if response.code != 302:
+        if response.status_code != 302:
             raise RuntimeError('Email was not a valid user.')
 
-        # Enter password and get new login state
-        password_url = f'https://auth0.openai.com/u/login/password?state={state}'
-        self.session.headers['Referer'] = password_url
+        # -----------------------------------------------------------------------------------------
+        # Step 7:
+        # Send the email and password to login to the account
+        # This will give us our final state in return
+        # -----------------------------------------------------------------------------------------
+        payload = f'state={state}&username={email_encoded}&password={password_encoded}&action=default'
+        response = self.session.post(f'https://auth0.openai.com/u/login/password?state={state}', headers={
+            'Host': 'auth0.openai.com',
+            'Origin': 'https://auth0.openai.com',
+            'Connection': 'keep-alive',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'User-Agent': CG_USER_AGENT,
+            'Referer': f'https://auth0.openai.com/u/login/password?state={state}',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }, data=payload)
 
-        response = self.session.post(
-            password_url,
-            data={
-                'state': state,
-                'username': self.email,
-                'password': self.password,
-                'action': 'default'
-            },
-            wait_until_finished=True
-        )
-
-        if response.code != 302:
+        if response.status_code != 302:
             raise RuntimeError('Password or captcha was wrong.')
 
-        new_state = re.findall(r'state=(.*)', response.text)[0].split('"')[0]
+        new_state: str = _STATE_PATTERN.findall(response.text)[0].split('"')[0]
 
-        response = self.session.get(
-            'https://auth0.openai.com/authorize/resume',
-            params={'state': new_state},
-            wait_until_finished=True
-        )
+        # -----------------------------------------------------------------------------------------
+        # Step 8:
+        # Finish auth0 process by sending the finished state
+        # This will give us our session token in return
+        # -----------------------------------------------------------------------------------------
+        response = self.session.get(f'https://auth0.openai.com/authorize/resume?state={new_state}', headers={
+            'Host': 'auth0.openai.com',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Connection': 'keep-alive',
+            'User-Agent': CG_USER_AGENT,
+            'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+            'Referer': f'https://auth0.openai.com/u/login/password?state={state}',
+        }, allow_redirects=True)
+
+        if response.status_code != 200:
+            raise RuntimeError('Couldn\'t resume authorization state.')
+
+        if not (session_token := self.session.cookies.get('__Secure-next-auth.session-token')):
+            raise ValueError('While most of the process was successful, Auth0 didn\'t issue a session token, retry.')
+
+        self.authenticationSuccessful.emit(session_token)
 
     def handle_captcha(self, image: QPixmap) -> str:
         """Wait for the application implementation to finish the captcha.

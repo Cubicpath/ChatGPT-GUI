@@ -72,7 +72,7 @@ class Client(QObject):
             'Sec-Fetch-Site': 'same-site',
             'Sec-GPC': '1',
             'TE': 'trailers',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0',
+            'User-Agent': CG_USER_AGENT,
             'X-OpenAI-Assistant-App-Id': '',
         })
 
