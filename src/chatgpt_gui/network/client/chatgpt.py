@@ -11,6 +11,7 @@ __all__ = (
 import datetime as dt
 import json
 import os
+from json import JSONDecodeError
 from typing import Any
 from uuid import UUID
 
@@ -27,6 +28,10 @@ from .auth import Authenticator
 from .structures import Action
 from .structures import Conversation
 from .structures import Message
+from .structures import User
+
+
+_DATE_FORMAT: str = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 class Client(QObject):
@@ -56,15 +61,31 @@ class Client(QObject):
         self.conversations: dict[UUID, Conversation] = {}
         self.host: str = 'chat.openai.com'
         self.models: list[str] | None = None
+        self.user: User | None = None
 
         self._session_expire: dt.datetime | None = None
         self._first_request: bool = True
         self._access_token: str | None = None
+
+        # Load session token
         self._session_token: str | None = kwargs.pop('session_token', os.getenv('CHATGPT_SESSION_AUTH', None))
         if self._session_token is None and CG_SESSION_PATH.is_file():
-            _session_data: dict[str, str] = json.loads(CG_SESSION_PATH.read_text(encoding='utf8'))
-            self._session_expire = dt.datetime.strptime(_session_data['expires'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            self._session_token = _session_data['token']
+            try:
+                # Read from file if value was not provided by kwarg or ENV
+                _session_data: dict[str, Any] = json.loads(CG_SESSION_PATH.read_text(encoding='utf8'))
+
+            except JSONDecodeError:
+                # Delete session file if invalid json
+                CG_SESSION_PATH.unlink()
+
+            else:
+                if user := _session_data.get('user'):
+                    self.user = User.from_json(user)
+
+                if expires := _session_data.get('expires'):
+                    self._session_expire = dt.datetime.strptime(expires, _DATE_FORMAT)
+
+                self._session_token = _session_data['token']
 
         self.session: NetworkSession = NetworkSession(self)
         self.session.headers = CaseInsensitiveDict({
@@ -124,7 +145,11 @@ class Client(QObject):
         self.set_cookie('__Secure-next-auth.session-token', value)
 
         hide_windows_file(CG_SESSION_PATH, unhide=True)
-        CG_SESSION_PATH.write_text(self._session_token, encoding='utf8')
+        CG_SESSION_PATH.write_text(json.dumps({
+            'user': self.user.to_json() if self.user is not None else {},
+            'expires': self._session_expire.strftime(_DATE_FORMAT) if self._session_expire is not None else None,
+            'token': self._session_token
+        }, indent=2), encoding='utf8')
         hide_windows_file(CG_SESSION_PATH)
 
     @session_token.deleter
@@ -171,9 +196,10 @@ class Client(QObject):
     def send_message(self, message_text: str, conversation: Conversation) -> None:
         """Send a message and emit the AI's response through `the `receivedMessage`` signal.
 
-        Automatically handles the conversation id and last message id.
+        Automatically handles the last message id.
 
         :param message_text: Message to send.
+        :param conversation: Conversation to send message in.
         :raises ValueError: If Response couldn't be parsed as a text/event-stream.
         """
         if self.models is None:
@@ -190,7 +216,7 @@ class Client(QObject):
         request: Request = Request(
             'POST', self.api_root + 'backend-api/conversation',
             headers={'Accept': 'text/event-stream', 'Content-type': 'application/json'},
-            json=action.to_json(), timeout=60.0,
+            json=action.to_json(), timeout=180.0,
         )
 
         response: Response = request.send(self.session, wait_until_finished=True)
@@ -242,11 +268,17 @@ class Client(QObject):
         if etag := response.headers.get('ETag'):
             self.session.headers['If-None-Match'] = etag
 
+        if user := response.json.get('user'):
+            self.user = User.from_json(user)
+
+        if access_token := response.json.get('accessToken'):
+            self.access_token = access_token
+
+        if session_expire := response.json.get('expires'):
+            self._session_expire = dt.datetime.strptime(session_expire, _DATE_FORMAT)
+
         if session_token := self.session.cookies.get('__Secure-next-auth.session-token'):
             self.session_token = session_token
-
-        if token := response.json.get('accessToken'):
-            self.access_token = token
 
         return True
 

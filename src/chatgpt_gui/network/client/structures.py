@@ -115,9 +115,10 @@ class Action:
 class User:
     """User that is signed-in to ChatGPT."""
 
+    id: str
     name: str
     email: str
-    icon: str
+    image: str
     picture: str
     groups: list[str] = field(default_factory=list)
     features: list[str] = field(default_factory=list)
@@ -125,14 +126,16 @@ class User:
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> User:
         """Load data from a JSON representation."""
+        print(data)
         return cls(**data)
 
     def to_json(self) -> dict[str, Any]:
         """Dump data into a JSON representation."""
         return {
+            'id': self.id,
             'name': self.name,
             'email': self.email,
-            'icon': self.icon,
+            'image': self.image,
             'picture': self.picture,
             'groups': self.groups,
             'features': self.features
