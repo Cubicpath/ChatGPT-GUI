@@ -22,6 +22,7 @@ from ...models import Singleton
 from ...utils import init_layouts
 from ...utils import init_objects
 from ..aliases import app
+from ..menus import AccountContextMenu
 from ..menus import HelpContextMenu
 from ..menus import ToolsContextMenu
 from ..widgets import ConversationView
@@ -47,7 +48,6 @@ class AppWindow(Singleton, QMainWindow):
 
     _singleton_base_type = QMainWindow
     _singleton_check_ref = False
-    shown_key_warning: bool = False
 
     def __init__(self, size: QSize) -> None:
         """Create the window for the application."""
@@ -82,6 +82,12 @@ class AppWindow(Singleton, QMainWindow):
                 'movable': False,
             },
 
+            (account := QAction(self)): {
+                'icon': app().icon_store['account'],
+                'menuRole': QAction.MenuRole.AboutRole,
+                'triggered': DeferredCallable(context_menu_handler, AccountContextMenu)
+            },
+
             (settings := QAction(self)): {
                 'menuRole': QAction.MenuRole.PreferencesRole,
                 'triggered': DistributedCallable((
@@ -111,12 +117,15 @@ class AppWindow(Singleton, QMainWindow):
             },
         })
 
+        # app().client.authenticator.authenticationSuccessful.connect(update_user)
+
         app().init_translations({
             menu_bar.setWindowTitle: 'gui.menu_bar.title',
             status_bar.setWindowTitle: 'gui.status_bar.title',
             settings.setText: 'gui.menus.settings',
             tools.setText: 'gui.menus.tools',
             help.setText: 'gui.menus.help',
+            account.setText: 'gui.menus.account',
             logger.label.setText: 'gui.status.default'
         })
 
@@ -126,7 +135,7 @@ class AppWindow(Singleton, QMainWindow):
         self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, status_bar)
 
         EventBus['exceptions'].subscribe(lambda e: logger.label.setText(f'{e.exception}...'), ExceptionEvent)
-        for action in (settings, tools, help):
+        for action in (account, settings, tools, help):
             menu_bar.addSeparator()
             menu_bar.addAction(action)
 
@@ -197,9 +206,8 @@ class AppWindow(Singleton, QMainWindow):
             app().windows['readme_viewer'].show()
             app().show_dialog('information.first_launch', self)
 
-        elif not self.shown_key_warning and not app().client.session_token:
-            app().show_dialog('warnings.empty_token', self)
-            self.__class__.shown_key_warning = True
+        if not app().client.session_token:
+            app().client.authenticationRequired.emit()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Close all detached/children windows and quit application."""
