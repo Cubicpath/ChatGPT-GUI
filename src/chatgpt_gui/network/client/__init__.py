@@ -9,6 +9,7 @@ __all__ = (
     'Client',
     'Conversation',
     'Message',
+    'User',
 )
 
 from .auth import Authenticator
@@ -16,3 +17,4 @@ from .chatgpt import Client
 from .structures import Action
 from .structures import Conversation
 from .structures import Message
+from .structures import User

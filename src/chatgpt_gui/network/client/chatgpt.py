@@ -69,7 +69,6 @@ class Client(QObject):
             'Connection': 'keep-alive',
             'DNT': '1',
             'Host': self.host,
-            'If-None-Match': '"zh3ivhmesm13w"',
             'Origin': 'https://chat.openai.com',
             'Referer': 'https://chat.openai.com/chat',
             'Sec-Fetch-Dest': 'empty',
@@ -226,6 +225,10 @@ class Client(QObject):
         """
         response = self._get('api/auth/session')
 
+        # Ignore next refresh if it has the same value
+        if etag := response.headers.get('ETag'):
+            self.session.headers['If-None-Match'] = etag
+
         if session_token := self.session.cookies.get('__Secure-next-auth.session-token'):
             self.session_token = session_token
 
@@ -242,7 +245,7 @@ class Client(QObject):
         self.authenticator.password = password
         self.authenticator.authenticate()
 
-    def new_session(self, session_token: str) -> None:
+    def new_session(self, session_token: str, *_) -> None:
         """Call with new session token provided by authenticator.
 
         :param session_token: New session token to use.

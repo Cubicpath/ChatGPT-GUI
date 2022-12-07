@@ -19,6 +19,7 @@ from PySide6.QtGui import *
 from tls_client import Session
 
 from ...constants import *
+from .structures import User
 
 
 _STATE_PATTERN: Final[re.Pattern] = re.compile(r'state=(.*)')
@@ -30,7 +31,7 @@ class Authenticator(QObject):
     Based on https://github.com/rawandahmad698/PyChatGPT
     """
 
-    authenticationSuccessful = Signal(str)
+    authenticationSuccessful = Signal(str, User)
     """Emits the session_token on success of Authenticator.authenticate()."""
 
     captchaEncountered = Signal(QPixmap)
@@ -255,7 +256,20 @@ class Authenticator(QObject):
         if not (session_token := self.session.cookies.get('__Secure-next-auth.session-token')):
             raise ValueError('While most of the process was successful, Auth0 didn\'t issue a session token, retry.')
 
-        self.authenticationSuccessful.emit(session_token)
+        # -----------------------------------------------------------------------------------------
+        # Test success by calling the session endpoint:
+        # Emit the session token along with the session's User
+        # -----------------------------------------------------------------------------------------
+        response = self.session.get('https://chat.openai.com/api/auth/session', headers={
+            'Host': 'chat.openai.com',
+            'Accept': '*/*',
+            'Connection': 'keep-alive',
+            'User-Agent': CG_USER_AGENT,
+            'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+        })
+
+        user: User = User.from_json(response.json()['user'])
+        self.authenticationSuccessful.emit(session_token, user)
 
     def handle_captcha(self, image: QPixmap) -> str:
         """Wait for the application implementation to finish the captcha.

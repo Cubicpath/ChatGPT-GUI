@@ -8,6 +8,7 @@ __all__ = (
     'Action',
     'Conversation',
     'Message',
+    'User',
 )
 
 from dataclasses import dataclass
@@ -108,3 +109,31 @@ class Action:
             data['conversation_id'] = str(self.conversation.uuid)
 
         return data
+
+
+@dataclass
+class User:
+    """User that is signed-in to ChatGPT."""
+
+    name: str
+    email: str
+    icon: str
+    picture: str
+    groups: list[str] = field(default_factory=list)
+    features: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> User:
+        """Load data from a JSON representation."""
+        return cls(**data)
+
+    def to_json(self) -> dict[str, Any]:
+        """Dump data into a JSON representation."""
+        return {
+            'name': self.name,
+            'email': self.email,
+            'icon': self.icon,
+            'picture': self.picture,
+            'groups': self.groups,
+            'features': self.features
+        }
