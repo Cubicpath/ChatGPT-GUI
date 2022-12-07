@@ -26,14 +26,39 @@ class AccountContextMenu(QMenu):
         super().__init__(parent)
 
         init_objects({
-            (login_to := QAction(self)): {
-                'text': tr('gui.menus.account.login_to'),
+            (sign_in := QAction(self)): {
+                'disabled': app().client.user is not None,
+                'text': tr('gui.menus.account.sign_in'),
                 'triggered': DeferredCallable(
                     app().show_dialog, 'test'
                 )
             },
+            (sign_out := QAction(self)): {
+                'disabled': app().client.user is None,
+                'text': tr('gui.menus.account.sign_out'),
+                'triggered': self.sign_out
+            },
         })
 
         add_menu_items(self, [
-            'Login to...', login_to
+            'Sign In', sign_in,
+            'Sign Out', sign_out
         ])
+
+    def sign_out(self) -> None:
+        """Confirm user intention and sign out.
+
+        :raises ValueError: If user is None.
+        """
+        if (user := app().client.user) is None:
+            raise ValueError('Cannot sign out from a null User.')
+
+        confirmation: bool = app().show_dialog(
+            'questions.sign_out', self,
+            buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            default_button=QMessageBox.StandardButton.Cancel,
+            description_args=(user.email,)
+        ).role == QMessageBox.ButtonRole.YesRole
+
+        if confirmation:
+            del app().client.session_token

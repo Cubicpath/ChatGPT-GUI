@@ -34,6 +34,8 @@
     "errors.settings.import_failure.title": "Import Error",
     "questions.create_shortcut.description": "Please choose the location you would like the shortcut to be in.",
     "questions.create_shortcut.title": "Shortcut Creation Tool",
+    "questions.sign_out.description": "Are you sure you want to sign out from <b>%s</b>? You will need to sign in again to access ChatGPT.",
+    "questions.sign_out.title": "Sign Out Confirmation",
 
     "gui.changelog_viewer.github": "View Changelog on GitHub",
     "gui.changelog_viewer.releases": "View Releases",
@@ -62,6 +64,8 @@
     "gui.toggle_multiline": "Toggle Multiline",
 
     "gui.menu_bar.title": "Menu Bar",
+    "gui.menus.account.sign_in": "Sign In...",
+    "gui.menus.account.sign_out": "Sign Out...",
     "gui.menus.help": "Help",
     "gui.menus.help.about": "About",
     "gui.menus.help.about_qt": "About Qt",

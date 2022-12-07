@@ -155,6 +155,8 @@ class Client(QObject):
     @session_token.deleter
     def session_token(self) -> None:
         self._session_token = None
+        self._session_expire = None
+        self.user = None
         self.delete_cookie('__Secure-next-auth.session-token')
         if CG_SESSION_PATH.is_file():
             CG_SESSION_PATH.unlink()
