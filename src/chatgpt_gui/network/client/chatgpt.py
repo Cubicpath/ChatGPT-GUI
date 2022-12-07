@@ -22,6 +22,7 @@ from ...utils import hide_windows_file
 from ..manager import NetworkSession
 from ..manager import Request
 from ..manager import Response
+from .auth import Authenticator
 from .structures import Action
 from .structures import Conversation
 from .structures import Message
@@ -30,6 +31,7 @@ from .structures import Message
 class Client(QObject):
     """Asynchronous HTTP REST Client that interfaces with ChatGPT."""
 
+    authenticationRequired = Signal()
     receivedMessage = Signal(Message, Conversation)
 
     def __init__(self, parent: QObject, **kwargs) -> None:
@@ -45,6 +47,9 @@ class Client(QObject):
         """
         super().__init__(parent)
         self.receivedMessage.connect(lambda msg, convo: print(f'Conversation: {convo.uuid} | {msg}'))
+
+        self.authenticator = Authenticator(self)
+        self.authenticator.authenticationSuccessful.connect(self.new_session)
 
         self.conversations: dict[UUID, Conversation] = {}
         self.host: str = 'chat.openai.com'
@@ -226,6 +231,23 @@ class Client(QObject):
 
         if token := response.json.get('accessToken'):
             self.access_token = token
+
+    def signin(self, username: str, password: str) -> None:
+        """Signin to OpenAI using the specified username and password.
+
+        :param username: Username to signin to (email address).
+        :param password: Password associated with username.
+        """
+        self.authenticator.username = username
+        self.authenticator.password = password
+        self.authenticator.authenticate()
+
+    def new_session(self, session_token: str) -> None:
+        """Call with new session token provided by authenticator.
+
+        :param session_token: New session token to use.
+        """
+        self.session_token = session_token
 
     def delete_cookie(self, name: str) -> None:
         """Delete given cookie if cookie exists."""

@@ -39,18 +39,22 @@ class Authenticator(QObject):
     solveCaptcha = Signal(str)
     """Emit this signal with the solved captcha from captchaEncountered."""
 
-    def __init__(self, parent: QObject | None = None, email: str | None = None, password: str | None = None):
+    def __init__(self, parent: QObject | None = None, username: str | None = None, password: str | None = None):
         """Create a new :py:class:`Authenticator`.
 
-        email and password attributes must be filled out before calling ``authenticate()``.
+        username and password attributes must be filled out before calling ``authenticate()``.
+
+        :param parent: Parent of QObject instance.
+        :param username: Username to login to (email address).
+        :param password: Password associated with username.
         """
         super().__init__(parent)
 
-        self.email: str | None = email
+        self.username: str | None = username
         self.password: str | None = password
         self.session = Session(client_identifier='chrome_105')
 
-    def authenticate(self):
+    def authenticate(self) -> None:
         """Authenticate self to OpenAI using email and password.
 
         Steps:
@@ -78,10 +82,10 @@ class Authenticator(QObject):
         # Step 0:
         # Check that all attributes are valid
         # -----------------------------------------------------------------------------------------
-        if not self.email or not self.password:
+        if not self.username or not self.password:
             raise ValueError('Email or password is not provided for Authenticator.')
 
-        email_encoded: str = quote(self.email)
+        username_encoded: str = quote(self.username)
         password_encoded: str = quote(self.password)
 
         # -----------------------------------------------------------------------------------------
@@ -188,11 +192,11 @@ class Authenticator(QObject):
         # Check if the username (email address) is a valid user
         # Also send the solved captcha if given
         # -----------------------------------------------------------------------------------------
-        payload = f'state={state}&username={email_encoded}&js-available=false' \
-                  f'&webauthn-available=true&is-brave=false&webauthn-platform-available=true&action=default'
+        payload: str = f'state={state}&username={username_encoded}&js-available=false' \
+                       f'&webauthn-available=true&is-brave=false&webauthn-platform-available=true&action=default'
 
         if captcha is not None:
-            payload = f'state={state}&username={email_encoded}&captcha={captcha}&js-available=true' \
+            payload = f'state={state}&username={username_encoded}&captcha={captcha}&js-available=true' \
                       f'&webauthn-available=true&is-brave=false&webauthn-platform-available=true&action=default'
 
         response = self.session.post(f'https://auth0.openai.com/u/login/identifier?state={state}', headers={
@@ -214,7 +218,7 @@ class Authenticator(QObject):
         # Send the email and password to login to the account
         # This will give us our final state in return
         # -----------------------------------------------------------------------------------------
-        payload = f'state={state}&username={email_encoded}&password={password_encoded}&action=default'
+        payload = f'state={state}&username={username_encoded}&password={password_encoded}&action=default'
         response = self.session.post(f'https://auth0.openai.com/u/login/password?state={state}', headers={
             'Host': 'auth0.openai.com',
             'Origin': 'https://auth0.openai.com',
