@@ -2,7 +2,7 @@
 
 
 # GUI, Networking stack, etc.
-PySide6_Essentials == 6.4.1
+PySide6 == 6.4.1
     shiboken6 == 6.4.1
 
 # Configuration file parser and editor
