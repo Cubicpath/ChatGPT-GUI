@@ -65,7 +65,7 @@ CG_CONFIG_PATH: Final[Path] = Path.home() / '.config/chatgpt_gui'
 CG_RESOURCE_PATH: Final[Path] = Path(__file__).parent / 'resources'
 """Directory containing application resources."""
 
-CG_SESSION_PATH: Final[Path] = CG_CONFIG_PATH / '.session'
+CG_SESSION_PATH: Final[Path] = CG_CONFIG_PATH / '.session.json'
 """File containing session token."""
 
 # Patterns

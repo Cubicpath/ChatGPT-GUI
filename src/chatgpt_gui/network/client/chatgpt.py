@@ -8,6 +8,7 @@ __all__ = (
     'Client',
 )
 
+import datetime as dt
 import json
 import os
 from typing import Any
@@ -33,6 +34,7 @@ class Client(QObject):
 
     authenticationRequired = Signal()
     receivedMessage = Signal(Message, Conversation)
+    signedOut = Signal()
 
     def __init__(self, parent: QObject, **kwargs) -> None:
         """Initialize OpenAI Client.
@@ -55,11 +57,14 @@ class Client(QObject):
         self.host: str = 'chat.openai.com'
         self.models: list[str] | None = None
 
+        self._session_expire: dt.datetime | None = None
         self._first_request: bool = True
         self._access_token: str | None = None
         self._session_token: str | None = kwargs.pop('session_token', os.getenv('CHATGPT_SESSION_AUTH', None))
         if self._session_token is None and CG_SESSION_PATH.is_file():
-            self._session_token = CG_SESSION_PATH.read_text(encoding='utf8').strip()
+            _session_data: dict[str, str] = json.loads(CG_SESSION_PATH.read_text(encoding='utf8'))
+            self._session_expire = dt.datetime.strptime(_session_data['expires'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            self._session_token = _session_data['token']
 
         self.session: NetworkSession = NetworkSession(self)
         self.session.headers = CaseInsensitiveDict({
@@ -129,6 +134,8 @@ class Client(QObject):
         if CG_SESSION_PATH.is_file():
             CG_SESSION_PATH.unlink()
 
+        self.signedOut.emit()
+
     def _get(self, path: str, update_auth_on_401: bool = True, **kwargs) -> Response:
         """Get a :py:class:`Response` from ChatGPT.
 
@@ -149,8 +156,8 @@ class Client(QObject):
         if response.code and not response.ok:
             # Handle errors
             if response.code == 401 and update_auth_on_401 and self.access_token is not None:
-                self.refresh_auth()
-                response = self._get(path, False, **kwargs)
+                if self.refresh_auth():
+                    response = self._get(path, False, **kwargs)
 
         return response
 
@@ -218,11 +225,17 @@ class Client(QObject):
             return f'{key[:3]}{"." * 50}{key[-3:]}'
         return 'None'
 
-    def refresh_auth(self) -> None:
+    def refresh_auth(self) -> bool:
         """Refresh authentication to OpenAI servers.
 
-        token MUST have a value for this to work.
+        If session is invalid, ask for new credentials
+
+        :return: True if successful, else False.
         """
+        if not self._session_token or (self._session_expire is not None and self._session_expire < dt.datetime.now()):
+            self.authenticationRequired.emit()
+            return False
+
         response = self._get('api/auth/session')
 
         # Ignore next refresh if it has the same value
@@ -234,6 +247,8 @@ class Client(QObject):
 
         if token := response.json.get('accessToken'):
             self.access_token = token
+
+        return True
 
     def signin(self, username: str, password: str) -> None:
         """Signin to OpenAI using the specified username and password.
@@ -251,6 +266,7 @@ class Client(QObject):
         :param session_token: New session token to use.
         """
         self.session_token = session_token
+        self.refresh_auth()
 
     def delete_cookie(self, name: str) -> None:
         """Delete given cookie if cookie exists."""
