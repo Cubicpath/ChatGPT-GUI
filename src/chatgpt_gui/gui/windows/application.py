@@ -19,6 +19,7 @@ from ...exception_hook import ExceptionEvent
 from ...models import DeferredCallable
 from ...models import DistributedCallable
 from ...models import Singleton
+from ...utils import circle_pixmap
 from ...utils import init_layouts
 from ...utils import init_objects
 from ..aliases import app
@@ -56,6 +57,9 @@ class AppWindow(Singleton, QMainWindow):
         self.resize(size)
         self.conversation_counter: int = 0
 
+        app().client.authenticator.authenticationSuccessful.connect(DeferredCallable(self.update_user_icon))
+        app().client.signedOut.connect(self.update_user_icon)
+
         self._init_toolbar()
         self._init_ui()
 
@@ -75,6 +79,8 @@ class AppWindow(Singleton, QMainWindow):
             menu.exec(self.cursor().pos())
             menu.deleteLater()
 
+        self.account_action = QAction(self)
+
         init_objects({
             (menu_bar := QToolBar(self)): {},
 
@@ -82,7 +88,7 @@ class AppWindow(Singleton, QMainWindow):
                 'movable': False,
             },
 
-            (account := QAction(self)): {
+            self.account_action: {
                 'icon': app().icon_store['account'],
                 'menuRole': QAction.MenuRole.AboutRole,
                 'triggered': DeferredCallable(context_menu_handler, AccountContextMenu)
@@ -117,15 +123,13 @@ class AppWindow(Singleton, QMainWindow):
             },
         })
 
-        # app().client.authenticator.authenticationSuccessful.connect(update_user)
-
         app().init_translations({
             menu_bar.setWindowTitle: 'gui.menu_bar.title',
             status_bar.setWindowTitle: 'gui.status_bar.title',
             settings.setText: 'gui.menus.settings',
             tools.setText: 'gui.menus.tools',
             help.setText: 'gui.menus.help',
-            account.setText: 'gui.menus.account',
+            self.account_action.setText: 'gui.menus.account_action',
             logger.label.setText: 'gui.status.default'
         })
 
@@ -135,7 +139,7 @@ class AppWindow(Singleton, QMainWindow):
         self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, status_bar)
 
         EventBus['exceptions'].subscribe(lambda e: logger.label.setText(f'{e.exception}...'), ExceptionEvent)
-        for action in (account, settings, tools, help):
+        for action in (self.account_action, settings, tools, help):
             menu_bar.addSeparator()
             menu_bar.addAction(action)
 
@@ -196,6 +200,32 @@ class AppWindow(Singleton, QMainWindow):
             self: {'centralWidget': main_widget}
         })
 
+    def update_user_icon(self) -> None:
+        """Update the user icon to the current user's profile picture.
+
+        If the user is None, fallback to default picture (account.png)
+        After retrieving the pfp, cache it in memory.
+        """
+        # Reset to default icon
+        if (user := app().client.user) is None:
+            self.account_action.setIcon(app().icon_store['account'])
+            return
+
+        # Get cached user icon
+        if (store_key := user.id) in app().icon_store:
+            self.account_action.setIcon(app().icon_store['account'])
+            return
+
+        # Get non-cached user icon, then cache
+        image_bytes: bytes = app().client.get_image(user.image)
+        pixmap = QPixmap()
+        pixmap.loadFromData(image_bytes)
+
+        icon = QIcon(circle_pixmap(pixmap))
+        app().icon_store[store_key] = icon
+
+        self.account_action.setIcon(icon)
+
     # # # # # Events
 
     def show(self) -> None:
@@ -208,6 +238,8 @@ class AppWindow(Singleton, QMainWindow):
 
         if not app().client.session_token:
             app().client.authenticationRequired.emit()
+
+        self.update_user_icon()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Close all detached/children windows and quit application."""

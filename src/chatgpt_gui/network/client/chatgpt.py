@@ -211,6 +211,23 @@ class Client(QObject):
         """
         return self._get('backend-api/models').json.get('models')
 
+    def get_image(self, url: str) -> bytes:
+        """Get the list of models to use with ChatGPT.
+
+        :return: List of model data. The "slug" key is the model name.
+        :raises ValueError: If request failed.
+        """
+        response: Response = self._get('_next/image', params={
+            'url': url,
+            'w': '32',
+            'q': '75'
+        })
+
+        if not response.ok:
+            raise ValueError(f'Couldn\'t get image for {url} at {response.url}.')
+
+        return response.data
+
     def send_message(self, message_text: str, conversation: Conversation) -> None:
         """Send a message and emit the AI's response through `the `receivedMessage`` signal.
 
