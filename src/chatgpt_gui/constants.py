@@ -11,6 +11,7 @@ __all__ = (
     'CG_PACKAGE_NAME',
     'CG_RESOURCE_PATH',
     'CG_SESSION_PATH',
+    'CG_SESSION_PATH_OLD',
     'CG_URL_PATTERN',
     'CG_USER_AGENT',
     'MARKDOWN_IMG_LINK_PATTERN',
@@ -66,7 +67,10 @@ CG_RESOURCE_PATH: Final[Path] = Path(__file__).parent / 'resources'
 """Directory containing application resources."""
 
 CG_SESSION_PATH: Final[Path] = CG_CONFIG_PATH / '.session.json'
-"""File containing session token."""
+"""File containing session information."""
+
+CG_SESSION_PATH_OLD: Final[Path] = CG_CONFIG_PATH / '.session'
+"""File containing ONLY session token. Deprecated."""
 
 # Patterns
 

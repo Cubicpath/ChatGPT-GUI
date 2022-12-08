@@ -69,13 +69,29 @@ class Client(QObject):
 
         # Load session token
         self._session_token: str | None = kwargs.pop('session_token', os.getenv('CHATGPT_SESSION_AUTH', None))
-        if self._session_token is None and CG_SESSION_PATH.is_file():
+        if self._session_token is None and (CG_SESSION_PATH.is_file() or CG_SESSION_PATH_OLD.is_file()):
+            # Read from file if value was not provided by kwarg or ENV
+            # Migrate old format to new format.
+            if CG_SESSION_PATH_OLD.is_file():
+                hide_windows_file(CG_SESSION_PATH_OLD, unhide=True)
+
+                # Read old token and dump in new format
+                _token_old = CG_SESSION_PATH_OLD.read_text(encoding='utf8')
+                CG_SESSION_PATH.write_text(json.dumps({
+                    'user': {},
+                    'expires': None,
+                    'token': _token_old
+                }, indent=2), encoding='utf8')
+
+                # Delete old file and mark new file as hidden
+                CG_SESSION_PATH_OLD.unlink()
+                hide_windows_file(CG_SESSION_PATH)
+
             try:
-                # Read from file if value was not provided by kwarg or ENV
                 _session_data: dict[str, Any] = json.loads(CG_SESSION_PATH.read_text(encoding='utf8'))
 
             except JSONDecodeError:
-                # Delete session file if invalid json
+                # Delete session file if invalid json.
                 CG_SESSION_PATH.unlink()
 
             else:
