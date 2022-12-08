@@ -1,7 +1,7 @@
 ###################################################################################################
 #                              MIT Licence (C) 2022 Cubicpath@Github                              #
 ###################################################################################################
-"""ExternalTextBrowser implementation."""
+"""ConversationView implementation."""
 from __future__ import annotations
 
 __all__ = (
