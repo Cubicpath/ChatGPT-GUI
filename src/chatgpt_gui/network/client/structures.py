@@ -91,7 +91,7 @@ class Action:
     conversation: Conversation = field(default_factory=Conversation)
     messages: list[Message] = field(default_factory=list)
     parent: Message = field(default_factory=Message)
-    type: str = field(default='next')
+    type: str = field(default='variant')
 
     def to_json(self) -> dict[str, Any]:
         """Dump data into a JSON representation.
