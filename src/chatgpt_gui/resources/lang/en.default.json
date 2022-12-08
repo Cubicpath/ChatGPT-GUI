@@ -77,6 +77,7 @@
     "gui.toggle_multiline": "Toggle Multiline",
 
     "gui.menu_bar.title": "Menu Bar",
+    "gui.menus.account": "Account",
     "gui.menus.account.sign_in": "Sign In...",
     "gui.menus.account.sign_out": "Sign Out...",
     "gui.menus.help": "Help",
