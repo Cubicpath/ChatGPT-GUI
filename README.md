@@ -55,6 +55,7 @@ If you like this application, be sure to star :)
 
 #### Todo:
 - [ ] Conversation Saving & Loading
+- [ ] Retry AI Message
 - [ ] Pretty Conversation Views
 - [ ] Proxy Settings
 
@@ -70,7 +71,7 @@ How to Use:
 under the `Tools` context menu
 
 ### Authentication:
-Thanks to [PyChatGPT] and [tls-client][python-tls-client], there exists a method to authenticate without
+Thanks to [rawandahmad698][rawandahmad698] and [tls-client][python-tls-client], there exists a method to authenticate without
 messing around with tokens or the browser. Simply sign in from the app itself!.
 
 ![Sign In](https://i.imgur.com/DabSYBhl.png)
@@ -113,5 +114,5 @@ While the current breeze themes are slightly modified versions, you can view the
 [PySide]: https://pypi.org/project/PySide6/ "PySide6"
 [python]: https://www.python.org "Python"
 [python310]: https://www.python.org/downloads/release/python-3100/ "Python 3.10"
-[PyChatGPT]: https://github.com/FlorianREGAZ/Python-Tls-Client "PyChatGPT"
+[rawandahmad698]: https://github.com/rawandahmad698 "rawandahmad698"
 [python-tls-client]: https://github.com/FlorianREGAZ/Python-Tls-Client "tls-client"
