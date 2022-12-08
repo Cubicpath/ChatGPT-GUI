@@ -40,7 +40,7 @@ class LicenseViewer(QWidget):
         self.prev_license_button: QPushButton
 
         self.license_data: list[tuple[str, str, str]] = []
-        for pkg, licenses in current_requirement_licenses(CG_PACKAGE_NAME, recursive=True, include_extras=True).items():
+        for pkg, licenses in current_requirement_licenses(CG_PACKAGE_NAME, include_extras=True).items():
             for title, text in licenses:
                 self.license_data.append((pkg, title, text))
 
