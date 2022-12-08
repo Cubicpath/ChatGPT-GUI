@@ -204,12 +204,12 @@ class Client(QObject):
 
         return response
 
-    def get_models(self) -> list[dict[str, Any]]:
+    def get_models(self) -> list[dict[str, Any]] | None:
         """Get the list of models to use with ChatGPT.
 
         :return: List of model data. The "slug" key is the model name.
         """
-        return self._get('backend-api/models').json['models']
+        return self._get('backend-api/models').json.get('models')
 
     def send_message(self, message_text: str, conversation: Conversation) -> None:
         """Send a message and emit the AI's response through `the `receivedMessage`` signal.
@@ -220,8 +220,10 @@ class Client(QObject):
         :param conversation: Conversation to send message in.
         :raises ValueError: If Response couldn't be parsed as a text/event-stream.
         """
-        if self.models is None:
-            self.models = [model['slug'] for model in self.get_models()]
+        if not self.models:
+            if not (models := self.get_models()):
+                raise ValueError('Couldn\'t get model data from ChatGPT. Check to make sure you\'re authenticated.')
+            self.models = [model['slug'] for model in models]
 
         if conversation.messages:
             parent_message: Message = conversation.messages[-1]
