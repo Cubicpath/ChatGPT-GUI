@@ -1,6 +1,6 @@
 ChatGPT-GUI
 ===============
-An unofficial GUI app for the ChatGPT backend API.
+An unofficial GUI app for ChatGPT.
 
 ------------------------------
 
@@ -14,15 +14,13 @@ An unofficial GUI app for the ChatGPT backend API.
 
 **Note: This project is in a public alpha, and as such, many features are not complete.**
 
-### Disclaimer:
-_**ChatGPT-GUI is in no way associated with, endorsed by, or otherwise affiliated with OpenAI.**_
-
 ### Other Documents:
 - [Changelog][changelog_github]
 - [License][license_github]
 
 ### Table of Contents
 - [About](#about)
+     - [Features](#features)
 - [How to Use](#how-to-use)
      - [Installation](#installation)
      - [Authentication](#authentication)
@@ -30,12 +28,35 @@ _**ChatGPT-GUI is in no way associated with, endorsed by, or otherwise affiliate
           - [Theme File Structure](#theme-file-structure)
 
 
+### Disclaimer:
+_**ChatGPT-GUI is in no way associated with, endorsed by, or otherwise affiliated with OpenAI.**_
+
 About:
 ---------------
-ChatGPT-GUI is a GUI application written using [Qt for Python][PySide] that allows you to easily use
-[ChatGPT] API endpoints.
+ChatGPT-GUI is an application written using [Qt for Python][PySide] that allows you to
+easily talk to Assistant, the AI based on [ChatGPT].
 
 This project is a fork of my other project, [HaloInfiniteGetter](https://github.com/Cubicpath/HaloInfiniteGetter).
+
+If you like this application, be sure to star :)
+
+### Features:
+- [x] Email/Password Login to [ChatGPT] Without Browser
+  - (Captcha solving is untested but implemented)
+- [x] Bypasses Moderation
+- [x] Desktop & Start Menu Shorcuts
+- [x] Session (token) Persistence
+- [x] Automatic Access Token Refreshing
+- [x] Multiple Concurrent Conversations
+- [x] Multi-line input
+- [x] Exception Reporter & Traceback Viewer
+- [x] Themes
+  - Builtin themes are: [Breeze Dark, Breeze Light, and Legacy]
+
+#### Todo:
+- [ ] Conversation Saving & Loading
+- [ ] Pretty Conversation Views
+- [ ] Proxy Settings
 
 How to Use:
 ---------------

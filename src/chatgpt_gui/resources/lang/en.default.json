@@ -5,7 +5,7 @@
 
   "keys": {
     "app.copyright": "MIT Licence (C) 2022 Cubicpath@Github",
-    "app.description": "An unofficial GUI app for the ChatGPT backend API.",
+    "app.description": "An unofficial GUI app for ChatGPT.",
     "app.name": "ChatGPT-GUI",
     "app.non_affiliation_disclaimer": "{app.name} is in no way associated with, endorsed by, or otherwise affiliated with OpenAI.",
 
