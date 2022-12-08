@@ -7,6 +7,7 @@ from __future__ import annotations
 __all__ = (
     'add_menu_items',
     'bit_rep',
+    'circle_pixmap',
     'create_shortcut',
     'current_requirement_licenses',
     'current_requirement_names',
@@ -48,6 +49,7 @@ from .common import return_arg
 from .common import quote_str
 from .common import unique_values
 from .gui import add_menu_items
+from .gui import circle_pixmap
 from .gui import delete_layout_widgets
 from .gui import icon_from_bytes
 from .gui import init_layouts

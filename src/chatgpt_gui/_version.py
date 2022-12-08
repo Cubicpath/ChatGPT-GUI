@@ -7,7 +7,7 @@
 # 2) We can load it in setup.cfg
 # 3) We can import it into modules
 
-__version_info__ = (0, 3, 0, 'final', 0)
+__version_info__ = (0, 3, 1, 'final', 0)
 """Major, Minor, Micro, Release level, Serial in respective order."""
 
 
@@ -125,5 +125,5 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
     return v_number
 
 
-__version__ = _stringify(*__version_info__)
+__version__ = _stringify(*__version_info__, dev=True)
 """String representation of version number."""

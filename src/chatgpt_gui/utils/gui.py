@@ -6,6 +6,7 @@ from __future__ import annotations
 
 __all__ = (
     'add_menu_items',
+    'circle_pixmap',
     'delete_layout_widgets',
     'icon_from_bytes',
     'init_layouts',
@@ -60,6 +61,34 @@ def add_menu_items(menu: QMenu, items: Sequence[str | QAction | QMenu]) -> None:
                 # Run method and go to next item.
                 meth(menu, obj)
                 break
+
+
+def circle_pixmap(source: QPixmap) -> QPixmap:
+    """Cut a circle out of a pixmap and return the result.
+
+    :param source: QPixmap to clip into circle.
+    :return: Resulting QPixmap.
+    """
+    size: int = min(source.width(), source.height())
+
+    # Create an empty pixmap
+    target = QPixmap(size, size)
+    target.fill(Qt.GlobalColor.transparent)
+
+    # Create a circular clipping area
+    painter = QPainter(target)
+    painter.setRenderHints(QPainter.RenderHint.Antialiasing)
+    path = QPainterPath()
+    path.addEllipse(0, 0, size, size)
+    painter.setClipPath(path)
+
+    # Draw the source pixmap onto the circle
+    source_rect = QRect(0, 0, size, size)
+    source_rect.moveCenter(source.rect().center())
+    painter.drawPixmap(target.rect(), source, source_rect)
+    painter.end()
+
+    return target
 
 
 def delete_layout_widgets(layout: QLayout) -> None:
