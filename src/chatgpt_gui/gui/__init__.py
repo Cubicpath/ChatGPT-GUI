@@ -19,6 +19,7 @@ __all__ = (
     'PasteLineEdit',
     'ReadmeViewer',
     'SettingsWindow',
+    'SignInDialog',
     'Theme',
     'ToolsContextMenu',
     'tr',
@@ -45,3 +46,4 @@ from .windows import ExceptionReporter
 from .windows import LicenseViewer
 from .windows import ReadmeViewer
 from .windows import SettingsWindow
+from .windows import SignInDialog

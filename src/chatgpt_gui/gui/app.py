@@ -207,6 +207,7 @@ class GetterApp(Singleton, QApplication):
         from .windows import LicenseViewer
         from .windows import ReadmeViewer
         from .windows import SettingsWindow
+        from .windows import SignInDialog
 
         SettingsWindow.create(QSize(420, 600))
         AppWindow.create(QSize(
@@ -215,6 +216,7 @@ class GetterApp(Singleton, QApplication):
             max(self.settings['gui/window/y_size'], 100)   # type: ignore
         ))
 
+        self._windows['sign_in'] = SignInDialog()
         self._windows['changelog_viewer'] = ChangelogViewer()
         self._windows['license_viewer'] = LicenseViewer()
         self._windows['readme_viewer'] = ReadmeViewer()

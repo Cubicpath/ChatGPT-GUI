@@ -10,6 +10,7 @@ __all__ = (
     'LicenseViewer',
     'ReadmeViewer',
     'SettingsWindow',
+    'SignInDialog',
 )
 
 from .application import AppWindow
@@ -18,3 +19,4 @@ from .exception_reporter import ExceptionReporter
 from .license_viewer import LicenseViewer
 from .readme_viewer import ReadmeViewer
 from .settings import SettingsWindow
+from .sign_in_dialog import SignInDialog
