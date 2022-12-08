@@ -126,7 +126,6 @@ class User:
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> User:
         """Load data from a JSON representation."""
-        print(data)
         return cls(**data)
 
     def to_json(self) -> dict[str, Any]:
