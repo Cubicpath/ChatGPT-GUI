@@ -260,8 +260,13 @@ class Client(QObject):
 
         :return: True if successful, else False.
         """
-        if not self._session_token or (self._session_expire is not None and self._session_expire < dt.datetime.now()):
+        if not self.session_token or (self._session_expire is not None and self._session_expire < dt.datetime.now()):
             self.authenticationRequired.emit()
+
+            # Delete expired session
+            if self.session_token:
+                del self.session_token
+
             return False
 
         response = self._get('api/auth/session')
