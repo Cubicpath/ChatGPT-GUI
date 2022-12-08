@@ -129,7 +129,7 @@ class AppWindow(Singleton, QMainWindow):
             settings.setText: 'gui.menus.settings',
             tools.setText: 'gui.menus.tools',
             help.setText: 'gui.menus.help',
-            self.account_action.setText: 'gui.menus.account_action',
+            self.account_action.setText: 'gui.menus.account',
             logger.label.setText: 'gui.status.default'
         })
 

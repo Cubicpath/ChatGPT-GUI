@@ -1,7 +1,7 @@
 ###################################################################################################
 #                              MIT Licence (C) 2022 Cubicpath@Github                              #
 ###################################################################################################
-"""An unofficial GUI app for the ChatGPT backend API."""
+"""A simple GUI app for ChatGPT."""
 # TODO: Remove pyright comments when PySide6 signals and events are properly type hinted.
 from ._version import __version__
 from ._version import __version_info__

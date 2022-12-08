@@ -82,6 +82,7 @@
     "gui.menus.account": "Account",
     "gui.menus.account.sign_in": "Sign In...",
     "gui.menus.account.sign_out": "Sign Out...",
+    "gui.menus.account.signed_in_as": "       Signed-in as: %s",
     "gui.menus.help": "Help",
     "gui.menus.help.about": "About",
     "gui.menus.help.about_qt": "About Qt",

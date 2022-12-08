@@ -40,11 +40,24 @@ def confirm_sign_out() -> None:
 class AccountContextMenu(QMenu):
     """Context menu that manages the logged in account."""
 
+    # pylint: disable=used-before-assignment
     def __init__(self, parent) -> None:
         """Create a new :py:class:`AccountContextMenu`."""
         super().__init__(parent)
 
         init_objects({
+            (email_text := QLabel(self)): {
+                'font': QFont('segoe ui', 9),
+                'text': tr(
+                    'gui.menus.account.signed_in_as',
+                    user.email if (user := app().client.user) is not None else None
+                ),
+            },
+
+            (email_action := QWidgetAction(self)): {
+                'defaultWidget': email_text,
+            },
+
             (sign_in := QAction(self)): {
                 'disabled': app().client.user is not None,
                 'text': tr('gui.menus.account.sign_in'),
@@ -58,7 +71,13 @@ class AccountContextMenu(QMenu):
             },
         })
 
-        add_menu_items(self, [
+        menu_items = [
             'Sign In', sign_in,
             'Sign Out', sign_out
-        ])
+        ]
+
+        if app().client.user is not None:
+            menu_items.insert(0, 'Account Information')
+            menu_items.insert(1, email_action)
+
+        add_menu_items(self, menu_items)
