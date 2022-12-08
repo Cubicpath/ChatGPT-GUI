@@ -31,6 +31,9 @@ class Authenticator(QObject):
     Based on https://github.com/rawandahmad698/PyChatGPT
     """
 
+    authenticationFailed = Signal(str, Exception)
+    """Emits the username and exception when Authenticator.authenticate() raises an Exception"""
+
     authenticationSuccessful = Signal(str, User)
     """Emits the session_token on success of Authenticator.authenticate()."""
 
@@ -55,18 +58,8 @@ class Authenticator(QObject):
         self.password: str | None = password
         self.session = Session(client_identifier='chrome_105')
 
-    def authenticate(self) -> None:
-        """Authenticate self to OpenAI using email and password.
-
-        Steps:
-            1. Get login page
-            2. Get csrf token from endpoint
-            3. Post csrf token to signin page
-            4. Get state from url returned by login page
-            5. Solve CAPTCHA
-            6. Post email to signin page
-            7. Post email and password to login page to get new state
-            8. Resume authorization to finish
+    def _authenticate(self) -> None:
+        """Run all steps.
 
         :raises ValueError: If Email or password is not provided for Authenticator.
             If csrf token was not provided by endpoint call.
@@ -270,6 +263,24 @@ class Authenticator(QObject):
 
         user: User = User.from_json(response.json()['user'])
         self.authenticationSuccessful.emit(session_token, user)
+
+    def authenticate(self) -> None:
+        """Authenticate self to OpenAI using email and password.
+
+        Steps:
+            1. Get login page
+            2. Get csrf token from endpoint
+            3. Post csrf token to signin page
+            4. Get state from url returned by login page
+            5. Solve CAPTCHA
+            6. Post email to signin page
+            7. Post email and password to login page to get new state
+            8. Resume authorization to finish
+        """
+        try:
+            self._authenticate()
+        except Exception as e:
+            self.authenticationFailed.emit(self.username, e)
 
     def handle_captcha(self, image: QPixmap) -> str:
         """Wait for the application implementation to finish the captcha.
