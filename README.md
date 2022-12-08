@@ -49,18 +49,18 @@ How to Use:
 under the `Tools` context menu
 
 ### Authentication:
-As this app is unofficial, you must use your own session key, which you can get by logging in to [ChatGPT] and
-getting data from the website's cookies.
+Thanks to [PyChatGPT] and [tls-client][python-tls-client], there exists a method to authenticate without
+messing around with tokens or the browser. Simply sign in from the app itself!.
 
-Guide:
-- Sign in to [ChatGPT]
+![Sign In](https://i.imgur.com/DabSYBhl.png)
+
+If you want to use session tokens anyway, here is the guide:
+- Sign in to [ChatGPT] on your browser
 - Navigate to the Cookies for chat.openai.com
   - On Firefox -- F12 > Move to the "Storage" tab > Under "Cookies" select https://chat.openai.com
 - Double-click the `__Secure-next-auth.session-token` cookie value and copy with CTRL + C
 - Open the Settings window, unlock the input by pressing the "Edit Session Token" button, then paste the copied value.
 - Press the Set button, and you should now be authenticated!
-
-![Settings](https://i.imgur.com/5Oa8TP1l.png)
 
 ### Themes:
 Themes are a way to style already-existing elements (Think CSS). They are held in a directory with their resources
@@ -92,3 +92,5 @@ While the current breeze themes are slightly modified versions, you can view the
 [PySide]: https://pypi.org/project/PySide6/ "PySide6"
 [python]: https://www.python.org "Python"
 [python310]: https://www.python.org/downloads/release/python-3100/ "Python 3.10"
+[PyChatGPT]: https://github.com/FlorianREGAZ/Python-Tls-Client "PyChatGPT"
+[python-tls-client]: https://github.com/FlorianREGAZ/Python-Tls-Client "tls-client"
