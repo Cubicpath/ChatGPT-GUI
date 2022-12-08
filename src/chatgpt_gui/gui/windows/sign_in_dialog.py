@@ -45,7 +45,6 @@ class SignInDialog(QWidget):
                 'windowFlags': Qt.WindowType.Dialog,
                 'windowModality': Qt.WindowModality.ApplicationModal,
                 'windowIcon': app().icon_store['account'],
-                'windowIconText': 'Sign In Dialog',
             },
 
             self.username_input: {
@@ -85,6 +84,7 @@ class SignInDialog(QWidget):
         })
 
         app().init_translations({
+            self.setWindowTitle: 'gui.sign_in_dialog.title',
             username_label.setText: 'gui.sign_in_dialog.username_label',
             password_label.setText: 'gui.sign_in_dialog.password_label',
             self.username_input.setPlaceholderText: 'gui.sign_in_dialog.username_placeholder',
