@@ -37,7 +37,7 @@ class Authenticator(QObject):
     authenticationSuccessful = Signal(str, User)
     """Emits the session_token on success of Authenticator.authenticate()."""
 
-    captchaEncountered = Signal(QPixmap)
+    captchaEncountered = Signal(QImage)
     """Emits a captcha that needs to be solved."""
 
     solveCaptcha = Signal(str)
@@ -177,9 +177,9 @@ class Authenticator(QObject):
             captcha_svg: str = soup.find('img', alt='captcha')['src'].split(',')[1]  # type: ignore
             decoded_svg: bytes = base64.decodebytes(captcha_svg.encode('ascii'))
 
-            pixmap: QPixmap = QPixmap()
-            pixmap.loadFromData(decoded_svg)
-            captcha = self.handle_captcha(pixmap)
+            image: QImage = QImage()
+            image.loadFromData(decoded_svg)
+            captcha = self.handle_captcha(image)
 
         # -----------------------------------------------------------------------------------------
         # Step 6:
@@ -282,7 +282,7 @@ class Authenticator(QObject):
         except Exception as e:
             self.authenticationFailed.emit(self.username, e)
 
-    def handle_captcha(self, image: QPixmap) -> str:
+    def handle_captcha(self, image: QImage) -> str:
         """Wait for the application implementation to finish the captcha.
 
         :param image: Captcha image to solve.

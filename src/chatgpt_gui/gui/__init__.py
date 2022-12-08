@@ -7,6 +7,7 @@ __all__ = (
     'AccountContextMenu',
     'app',
     'AppWindow',
+    'CaptchaDialog',
     'ComboBox',
     'ConversationView',
     'ExceptionLogger',
@@ -41,6 +42,7 @@ from .widgets import HistoryComboBox
 from .widgets import PasteLineEdit
 from .widgets import TranslatableComboBox
 from .windows import AppWindow
+from .windows import CaptchaDialog
 from .windows import ChangelogViewer
 from .windows import ExceptionReporter
 from .windows import LicenseViewer

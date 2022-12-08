@@ -41,6 +41,8 @@
     "questions.sign_out.description": "Are you sure you want to sign out from <b>%s</b>? You will need to sign in again to access ChatGPT.",
     "questions.sign_out.title": "Sign Out Confirmation",
 
+    "gui.captcha_dialog.captcha_placeholder": "Enter Answer...",
+    "gui.captcha_dialog.title": "Solve Captcha",
     "gui.changelog_viewer.github": "View Changelog on GitHub",
     "gui.changelog_viewer.releases": "View Releases",
     "gui.changelog_viewer.title": "Changelog Viewer",

@@ -5,6 +5,7 @@
 
 __all__ = (
     'AppWindow',
+    'CaptchaDialog',
     'ChangelogViewer',
     'ExceptionReporter',
     'LicenseViewer',
@@ -14,6 +15,7 @@ __all__ = (
 )
 
 from .application import AppWindow
+from .captcha_dialog import CaptchaDialog
 from .changelog_viewer import ChangelogViewer
 from .exception_reporter import ExceptionReporter
 from .license_viewer import LicenseViewer

@@ -203,6 +203,7 @@ class GetterApp(Singleton, QApplication):
     def _create_windows(self) -> None:
         """Create window instances."""
         from .windows import AppWindow
+        from .windows import CaptchaDialog
         from .windows import ChangelogViewer
         from .windows import LicenseViewer
         from .windows import ReadmeViewer
@@ -216,6 +217,7 @@ class GetterApp(Singleton, QApplication):
             max(self.settings['gui/window/y_size'], 100)   # type: ignore
         ))
 
+        self._windows['captcha'] = CaptchaDialog()
         self._windows['sign_in'] = SignInDialog()
         self._windows['changelog_viewer'] = ChangelogViewer()
         self._windows['license_viewer'] = LicenseViewer()
