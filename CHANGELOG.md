@@ -5,7 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.3.1] - 2022-12-7 [PyPI](https://pypi.org/project/chatgpt-gui/0.3.1)
+## [0.3.2] - 2022-12-8 [PyPI](https://pypi.org/project/chatgpt-gui/0.3.2)
+### Changed
+- `PySide6` dependency to smaller `PySide6-Essentials`
+
+### Removed
+- Broken `lxml` dependency.
+  - `beautifulsoup4` now uses `html.parser`
+
+
+## [0.3.1] - 2022-12-8 [PyPI](https://pypi.org/project/chatgpt-gui/0.3.1)
 ### Added
 - Shows current account pfp and email address
 - "Solve Captcha" dialog (Untested)
@@ -53,7 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic input and output communication to ChatGPT
 
 
-[Unreleased]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.3...v0.3.1
 [0.3]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.2...v0.3
 [0.2]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.1.1...v0.2
