@@ -172,7 +172,7 @@ class Authenticator(QObject):
             raise RuntimeError('Couldn\'t make request to our login page.')
 
         captcha: str | None = None
-        soup: BeautifulSoup = BeautifulSoup(response.text, 'lxml')
+        soup: BeautifulSoup = BeautifulSoup(response.text, 'html.parser')
         if soup.find('img', alt='captcha'):
             captcha_svg: str = soup.find('img', alt='captcha')['src'].split(',')[1]  # type: ignore
             decoded_svg: bytes = base64.decodebytes(captcha_svg.encode('ascii'))

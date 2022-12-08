@@ -30,7 +30,6 @@ dependencies = [
     "toml>=0.10.2",
     "tls-client>=0.1.5",
     "beautifulsoup4>=4.11.1",
-    "lxml>=4.9.1",
 ]
 
 [project.optional-dependencies]
