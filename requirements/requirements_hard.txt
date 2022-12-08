@@ -2,8 +2,16 @@
 
 
 # GUI, Networking stack, etc.
-PySide6_Essentials == 6.4.1
+PySide6-Essentials == 6.4.1
     shiboken6 == 6.4.1
+
+# auth0 TLS Fingerprinting bypasser
+tls-client == 0.1.5
+
+# HTML parser
+beautifulsoup4 == 4.11.1
+    soupsieve == 2.3.2.post1
+    lxml == 4.9.1
 
 # Configuration file parser and editor
 toml == 0.10.2

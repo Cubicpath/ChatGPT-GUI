@@ -5,128 +5,41 @@
 from __future__ import annotations
 
 __all__ = (
-    'Action',
     'Client',
-    'Conversation',
-    'Message',
 )
 
+import datetime as dt
 import json
 import os
-from dataclasses import dataclass
-from dataclasses import field
+from json import JSONDecodeError
 from typing import Any
 from uuid import UUID
-from uuid import uuid4
 
 from PySide6.QtCore import *
 
-from ..constants import *
-from ..models import CaseInsensitiveDict
-from ..utils import decode_url
-from ..utils import hide_windows_file
-from .manager import NetworkSession
-from .manager import Request
-from .manager import Response
+from ...constants import *
+from ...models import CaseInsensitiveDict
+from ...utils import decode_url
+from ...utils import hide_windows_file
+from ..manager import NetworkSession
+from ..manager import Request
+from ..manager import Response
+from .auth import Authenticator
+from .structures import Action
+from .structures import Conversation
+from .structures import Message
+from .structures import User
 
 
-@dataclass
-class Message:
-    """ChatGPT message sent or received."""
-
-    uuid: UUID = field(default_factory=uuid4)
-    text: str | None = field(default=None)
-    role: str = field(default='user')
-
-    @classmethod
-    def from_json(cls, data: dict[str, Any]) -> Message:
-        """Load data from a JSON representation."""
-        return cls(
-            uuid=UUID(data['id']),
-            text='\n\n'.join(data['content']['parts']),
-            role=data['role']
-        )
-
-    def to_json(self) -> dict[str, Any]:
-        """Dump data into a JSON representation.
-
-        The ``content`` key is omitted if the ``text`` attribute is ``None``.
-        """
-        data: dict[str, Any] = {
-            'id': str(self.uuid),
-            'role': self.role
-        }
-
-        if self.text is not None:
-            data['content'] = {
-                'content_type': 'text',
-                'parts': [self.text]
-            }
-
-        return data
-
-
-@dataclass
-class Conversation:
-    """ChatGPT conversation.
-
-    Includes a list of all messages sent and received in the conversation.
-    """
-
-    uuid: UUID | None = field(default=None)
-    messages: list[Message] = field(default_factory=list)
-
-    @classmethod
-    def from_json(cls, data: dict[str, Any]) -> Conversation:
-        """Load data from a JSON representation."""
-        return cls(
-            uuid=UUID(data['id']),
-            messages=[Message.from_json(message) for message in data['messages']],
-        )
-
-    def to_json(self) -> dict[str, Any]:
-        """Dump data into a JSON representation."""
-        return {
-            'id': str(self.uuid),
-            'messages': [message.to_json() for message in self.messages],
-        }
-
-
-@dataclass
-class Action:
-    """Action sent to ChatGPT.
-
-    If no conversation is provided, ChatGPT creates a new conversation for you in its response.
-    """
-
-    model: str
-    conversation: Conversation = field(default_factory=Conversation)
-    messages: list[Message] = field(default_factory=list)
-    parent: Message = field(default_factory=Message)
-    type: str = field(default='next')
-
-    def to_json(self) -> dict[str, Any]:
-        """Dump data into a JSON representation.
-
-        The ``conversation_id`` key is omitted if the ``conversation`` attribute is ``None``.
-        """
-        data = {
-            'action': self.type,
-            'messages': [message.to_json() for message in self.messages],
-            'model': self.model,
-            'parent_message_id': str(self.parent.uuid)
-        }
-
-        if self.conversation.uuid is not None:
-            data['conversation_id'] = str(self.conversation.uuid)
-
-        return data
+_DATE_FORMAT: str = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 class Client(QObject):
     """Asynchronous HTTP REST Client that interfaces with ChatGPT."""
 
+    authenticationRequired = Signal()
     receivedMessage = Signal(Message, Conversation)
+    signedOut = Signal()
 
     def __init__(self, parent: QObject, **kwargs) -> None:
         """Initialize OpenAI Client.
@@ -142,15 +55,53 @@ class Client(QObject):
         super().__init__(parent)
         self.receivedMessage.connect(lambda msg, convo: print(f'Conversation: {convo.uuid} | {msg}'))
 
+        self.authenticator = Authenticator(self)
+        self.authenticator.authenticationSuccessful.connect(self.new_session)
+
         self.conversations: dict[UUID, Conversation] = {}
         self.host: str = 'chat.openai.com'
         self.models: list[str] | None = None
+        self.user: User | None = None
 
+        self._session_expire: dt.datetime | None = None
         self._first_request: bool = True
         self._access_token: str | None = None
+
+        # Load session token
         self._session_token: str | None = kwargs.pop('session_token', os.getenv('CHATGPT_SESSION_AUTH', None))
-        if self._session_token is None and CG_SESSION_PATH.is_file():
-            self._session_token = CG_SESSION_PATH.read_text(encoding='utf8').strip()
+        if self._session_token is None and (CG_SESSION_PATH.is_file() or CG_SESSION_PATH_OLD.is_file()):
+            # Read from file if value was not provided by kwarg or ENV
+            # Migrate old format to new format.
+            if CG_SESSION_PATH_OLD.is_file():
+                hide_windows_file(CG_SESSION_PATH_OLD, unhide=True)
+
+                # Read old token and dump in new format
+                _token_old = CG_SESSION_PATH_OLD.read_text(encoding='utf8')
+                CG_SESSION_PATH.write_text(json.dumps({
+                    'user': {},
+                    'expires': None,
+                    'token': _token_old
+                }, indent=2), encoding='utf8')
+
+                # Delete old file and mark new file as hidden
+                CG_SESSION_PATH_OLD.unlink()
+                hide_windows_file(CG_SESSION_PATH)
+
+            try:
+                _session_data: dict[str, Any] = json.loads(CG_SESSION_PATH.read_text(encoding='utf8'))
+
+            except JSONDecodeError:
+                # Delete session file if invalid json.
+                CG_SESSION_PATH.unlink()
+
+            else:
+                if user := _session_data.get('user'):
+                    self.user = User.from_json(user)
+
+                if expires := _session_data.get('expires'):
+                    self._session_expire = dt.datetime.strptime(expires, _DATE_FORMAT)
+
+                self._session_token = _session_data['token']
 
         self.session: NetworkSession = NetworkSession(self)
         self.session.headers = CaseInsensitiveDict({
@@ -160,7 +111,6 @@ class Client(QObject):
             'Connection': 'keep-alive',
             'DNT': '1',
             'Host': self.host,
-            'If-None-Match': 'zh3ivhmesm13w',
             'Origin': 'https://chat.openai.com',
             'Referer': 'https://chat.openai.com/chat',
             'Sec-Fetch-Dest': 'empty',
@@ -168,7 +118,8 @@ class Client(QObject):
             'Sec-Fetch-Site': 'same-site',
             'Sec-GPC': '1',
             'TE': 'trailers',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0',
+            'User-Agent': CG_USER_AGENT,
+            'X-OpenAI-Assistant-App-Id': '',
         })
 
         if self.session_token:
@@ -210,15 +161,23 @@ class Client(QObject):
         self.set_cookie('__Secure-next-auth.session-token', value)
 
         hide_windows_file(CG_SESSION_PATH, unhide=True)
-        CG_SESSION_PATH.write_text(self._session_token, encoding='utf8')
+        CG_SESSION_PATH.write_text(json.dumps({
+            'user': self.user.to_json() if self.user is not None else {},
+            'expires': self._session_expire.strftime(_DATE_FORMAT) if self._session_expire is not None else None,
+            'token': self._session_token
+        }, indent=2), encoding='utf8')
         hide_windows_file(CG_SESSION_PATH)
 
     @session_token.deleter
     def session_token(self) -> None:
         self._session_token = None
+        self._session_expire = None
+        self.user = None
         self.delete_cookie('__Secure-next-auth.session-token')
         if CG_SESSION_PATH.is_file():
             CG_SESSION_PATH.unlink()
+
+        self.signedOut.emit()
 
     def _get(self, path: str, update_auth_on_401: bool = True, **kwargs) -> Response:
         """Get a :py:class:`Response` from ChatGPT.
@@ -240,28 +199,31 @@ class Client(QObject):
         if response.code and not response.ok:
             # Handle errors
             if response.code == 401 and update_auth_on_401 and self.access_token is not None:
-                self.refresh_auth()
-                response = self._get(path, False, **kwargs)
+                if self.refresh_auth():
+                    response = self._get(path, False, **kwargs)
 
         return response
 
-    def get_models(self) -> list[dict[str, Any]]:
+    def get_models(self) -> list[dict[str, Any]] | None:
         """Get the list of models to use with ChatGPT.
 
         :return: List of model data. The "slug" key is the model name.
         """
-        return self._get('backend-api/models').json['models']
+        return self._get('backend-api/models').json.get('models')
 
     def send_message(self, message_text: str, conversation: Conversation) -> None:
         """Send a message and emit the AI's response through `the `receivedMessage`` signal.
 
-        Automatically handles the conversation id and last message id.
+        Automatically handles the last message id.
 
         :param message_text: Message to send.
+        :param conversation: Conversation to send message in.
         :raises ValueError: If Response couldn't be parsed as a text/event-stream.
         """
-        if self.models is None:
-            self.models = [model['slug'] for model in self.get_models()]
+        if not self.models:
+            if not (models := self.get_models()):
+                raise ValueError('Couldn\'t get model data from ChatGPT. Check to make sure you\'re authenticated.')
+            self.models = [model['slug'] for model in models]
 
         if conversation.messages:
             parent_message: Message = conversation.messages[-1]
@@ -274,7 +236,7 @@ class Client(QObject):
         request: Request = Request(
             'POST', self.api_root + 'backend-api/conversation',
             headers={'Accept': 'text/event-stream', 'Content-type': 'application/json'},
-            json=action.to_json(), timeout=60.0,
+            json=action.to_json(), timeout=180.0,
         )
 
         response: Response = request.send(self.session, wait_until_finished=True)
@@ -309,18 +271,59 @@ class Client(QObject):
             return f'{key[:3]}{"." * 50}{key[-3:]}'
         return 'None'
 
-    def refresh_auth(self) -> None:
+    def refresh_auth(self) -> bool:
         """Refresh authentication to OpenAI servers.
 
-        token MUST have a value for this to work.
+        If session is invalid, ask for new credentials
+
+        :return: True if successful, else False.
         """
+        if not self.session_token or (self._session_expire is not None and self._session_expire < dt.datetime.now()):
+            self.authenticationRequired.emit()
+
+            # Delete expired session
+            if self.session_token:
+                del self.session_token
+
+            return False
+
         response = self._get('api/auth/session')
+
+        # Ignore next refresh if it has the same value
+        if etag := response.headers.get('ETag'):
+            self.session.headers['If-None-Match'] = etag
+
+        if user := response.json.get('user'):
+            self.user = User.from_json(user)
+
+        if access_token := response.json.get('accessToken'):
+            self.access_token = access_token
+
+        if session_expire := response.json.get('expires'):
+            self._session_expire = dt.datetime.strptime(session_expire, _DATE_FORMAT)
 
         if session_token := self.session.cookies.get('__Secure-next-auth.session-token'):
             self.session_token = session_token
 
-        if token := response.json.get('accessToken'):
-            self.access_token = token
+        return True
+
+    def signin(self, username: str, password: str) -> None:
+        """Signin to OpenAI using the specified username and password.
+
+        :param username: Username to signin to (email address).
+        :param password: Password associated with username.
+        """
+        self.authenticator.username = username
+        self.authenticator.password = password
+        self.authenticator.authenticate()
+
+    def new_session(self, session_token: str, *_) -> None:
+        """Call with new session token provided by authenticator.
+
+        :param session_token: New session token to use.
+        """
+        self.session_token = session_token
+        self.refresh_auth()
 
     def delete_cookie(self, name: str) -> None:
         """Delete given cookie if cookie exists."""

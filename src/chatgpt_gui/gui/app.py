@@ -152,6 +152,7 @@ class GetterApp(Singleton, QApplication):
         # Must load client last, but before windows
         self.load_env(verbose=True)
         self.client = Client(self)
+        self._connect_authenticator()
 
         # Setup window instances
         self._create_windows()
@@ -169,6 +170,19 @@ class GetterApp(Singleton, QApplication):
     def windows(self) -> dict[str, QWidget]:
         """Return a copy of the self._windows dictionary."""
         return self._windows.copy()
+
+    def _connect_authenticator(self) -> None:
+        self.client.authenticationRequired.connect(
+            lambda: self.show_dialog('warnings.empty_token')
+        )
+
+        self.client.authenticator.authenticationSuccessful.connect(
+            lambda _, user: self.show_dialog('information.authentication_success', description_args=(user.email,))
+        )
+
+        self.client.authenticator.authenticationFailed.connect(
+            lambda email, e: self.show_dialog('errors.authentication_failed', description_args=(email, e))
+        )
 
     def _create_paths(self) -> None:
         """Create files and directories if they do not exist."""
@@ -193,6 +207,7 @@ class GetterApp(Singleton, QApplication):
         from .windows import LicenseViewer
         from .windows import ReadmeViewer
         from .windows import SettingsWindow
+        from .windows import SignInDialog
 
         SettingsWindow.create(QSize(420, 600))
         AppWindow.create(QSize(
@@ -201,6 +216,7 @@ class GetterApp(Singleton, QApplication):
             max(self.settings['gui/window/y_size'], 100)   # type: ignore
         ))
 
+        self._windows['sign_in'] = SignInDialog()
         self._windows['changelog_viewer'] = ChangelogViewer()
         self._windows['license_viewer'] = LicenseViewer()
         self._windows['readme_viewer'] = ReadmeViewer()

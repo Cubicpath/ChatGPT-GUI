@@ -11,7 +11,9 @@ __all__ = (
     'CG_PACKAGE_NAME',
     'CG_RESOURCE_PATH',
     'CG_SESSION_PATH',
+    'CG_SESSION_PATH_OLD',
     'CG_URL_PATTERN',
+    'CG_USER_AGENT',
     'MARKDOWN_IMG_LINK_PATTERN',
     'MARKDOWN_REF_LINK_PATTERN',
     'RFC_5646_PATTERN',
@@ -49,6 +51,10 @@ SUPPORTED_IMAGE_MIME_TYPES: Final[frozenset[str]] = frozenset({
 CG_PACKAGE_NAME: Final[str] = __package__.split('.', maxsplit=1)[0]
 """The base package name for this application, for use in sub-packages."""
 
+CG_USER_AGENT: Final[str] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' \
+                            'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15'
+"""User agent used when communicating with ChatGPT"""
+
 # Paths
 
 CG_CACHE_PATH: Final[Path] = Path.home() / '.cache/chatgpt_gui'
@@ -60,8 +66,11 @@ CG_CONFIG_PATH: Final[Path] = Path.home() / '.config/chatgpt_gui'
 CG_RESOURCE_PATH: Final[Path] = Path(__file__).parent / 'resources'
 """Directory containing application resources."""
 
-CG_SESSION_PATH: Final[Path] = CG_CONFIG_PATH / '.session'
-"""File containing session token."""
+CG_SESSION_PATH: Final[Path] = CG_CONFIG_PATH / '.session.json'
+"""File containing session information."""
+
+CG_SESSION_PATH_OLD: Final[Path] = CG_CONFIG_PATH / '.session'
+"""File containing ONLY session token. Deprecated."""
 
 # Patterns
 
