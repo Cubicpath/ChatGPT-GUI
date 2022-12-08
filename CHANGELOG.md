@@ -5,11 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [0.3] - 2022-12-7 [PyPI](https://pypi.org/project/chatgpt-gui/0.3)
 ### Added
 - Authenticator (No more manual session tokens)
 - Sign In / Sign Out
 - `tls-client` and `beautifulsoup4` hard-requirements
+
+### Changed
+- session token storage format (`.session` to `.session.json`)
+    - This is backwards-compatible and will automatically be migrated.
 
 
 ## [0.2] - 2022-12-6 [PyPI](https://pypi.org/project/chatgpt-gui/0.2)
@@ -37,7 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic input and output communication to ChatGPT
 
 
-[Unreleased]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.2...HEAD
+[Unreleased]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.3...HEAD
+[0.3]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.2...v0.3
 [0.2]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.1.1...v0.2
 [0.1.1]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.1.0...v0.1.1
 [0.1]: https://github.com/Cubicpath/ChatGPT-GUI/releases/tag/v0.1
