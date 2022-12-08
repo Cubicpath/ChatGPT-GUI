@@ -6,16 +6,35 @@ from __future__ import annotations
 
 __all__ = (
     'AccountContextMenu',
+    'confirm_sign_out',
 )
 
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
-from ...models import DeferredCallable
 from ...utils import add_menu_items
 from ...utils import init_objects
 from ..aliases import app
 from ..aliases import tr
+
+
+def confirm_sign_out() -> None:
+    """Confirm user intention and sign out.
+
+    :raises ValueError: If user is None.
+    """
+    if (user := app().client.user) is None:
+        raise ValueError('Cannot sign out from a null User.')
+
+    confirmation: bool = app().show_dialog(
+        'questions.sign_out', None,
+        buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+        default_button=QMessageBox.StandardButton.Cancel,
+        description_args=(user.email,)
+    ).role == QMessageBox.ButtonRole.YesRole
+
+    if confirmation:
+        del app().client.session_token
 
 
 class AccountContextMenu(QMenu):
@@ -29,14 +48,13 @@ class AccountContextMenu(QMenu):
             (sign_in := QAction(self)): {
                 'disabled': app().client.user is not None,
                 'text': tr('gui.menus.account.sign_in'),
-                'triggered': DeferredCallable(
-                    app().show_dialog, 'test'
-                )
+                'triggered': app().windows['sign_in'].show
             },
+
             (sign_out := QAction(self)): {
                 'disabled': app().client.user is None,
                 'text': tr('gui.menus.account.sign_out'),
-                'triggered': self.sign_out
+                'triggered': confirm_sign_out
             },
         })
 
@@ -44,21 +62,3 @@ class AccountContextMenu(QMenu):
             'Sign In', sign_in,
             'Sign Out', sign_out
         ])
-
-    def sign_out(self) -> None:
-        """Confirm user intention and sign out.
-
-        :raises ValueError: If user is None.
-        """
-        if (user := app().client.user) is None:
-            raise ValueError('Cannot sign out from a null User.')
-
-        confirmation: bool = app().show_dialog(
-            'questions.sign_out', self,
-            buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-            default_button=QMessageBox.StandardButton.Cancel,
-            description_args=(user.email,)
-        ).role == QMessageBox.ButtonRole.YesRole
-
-        if confirmation:
-            del app().client.session_token
