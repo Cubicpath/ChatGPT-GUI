@@ -212,10 +212,11 @@ class Client(QObject):
         return self._get('backend-api/models').json.get('models')
 
     def get_image(self, url: str) -> bytes:
-        """Get the list of models to use with ChatGPT.
+        """Get an image using ChatGPT.
+        
+        This should be used for things like profile icons, which are behind an auth0 server.
 
-        :return: List of model data. The "slug" key is the model name.
-        :raises ValueError: If request failed.
+        :return: Url
         """
         response: Response = self._get('_next/image', params={
             'url': url,
