@@ -43,7 +43,7 @@ If you like this application, be sure to star :)
 ### Features:
 - [x] Email/Password Login to [ChatGPT] Without Browser
   - (Captcha solving is untested but implemented)
-- [x] Bypasses Moderation
+- [x] Executable Script in PATH (`chatgpt`)
 - [x] Desktop & Start Menu Shorcuts
 - [x] Session (token) Persistence
 - [x] Automatic Access Token Refreshing
@@ -71,7 +71,7 @@ How to Use:
 under the `Tools` context menu
 
 ### Authentication:
-Thanks to [rawandahmad698][rawandahmad698] and [tls-client][python-tls-client], there exists a method to authenticate without
+Thanks to [rawandahmad698] and [tls-client][python-tls-client], there exists a method to authenticate without
 messing around with tokens or the browser. Simply sign in from the app itself!.
 
 ![Sign In](https://i.imgur.com/DabSYBhl.png)
