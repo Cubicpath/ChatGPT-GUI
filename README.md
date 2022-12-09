@@ -1,14 +1,14 @@
 ChatGPT-GUI
 ===============
-An unofficial GUI app for ChatGPT.
 
-------------------------------
-
-[![MIT License](https://img.shields.io/github/license/Cubicpath/ChatGPT-GUI?style=for-the-badge)][license]
-
+[![MIT License](https://img.shields.io/github/license/Cubicpath/ChatGPT-GUI?style=flat-square)][license]
 [![PyPI](https://img.shields.io/pypi/v/chatgpt-gui?label=PyPI&logo=pypi&style=flat-square)][homepage]
 [![Python](https://img.shields.io/pypi/pyversions/chatgpt-gui?label=Python&logo=python&style=flat-square)][python]
 [![CPython](https://img.shields.io/pypi/implementation/chatgpt-gui?label=Impl&logo=python&style=flat-square)][python]
+
+------------------------------
+
+An unofficial GUI app for ChatGPT.
 
 ------------------------------
 
