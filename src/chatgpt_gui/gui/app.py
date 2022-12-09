@@ -447,7 +447,7 @@ class GetterApp(Singleton, QApplication):
                     str((CG_RESOURCE_PATH / 'scripts/upgrade_version.py').absolute().resolve(True)),
                     f'{CG_PACKAGE_NAME.replace("_", "-")}', CG_PACKAGE_NAME
                 ))
-                self.exit(0)
+                sys.exit(0)
             case QMessageBox.ButtonRole.NoRole:
                 self.version_checker.newerVersion.disconnect(self._upgrade_version_dialog)
                 self.settings['ignore_updates'] = True
