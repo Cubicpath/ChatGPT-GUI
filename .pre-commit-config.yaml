@@ -64,10 +64,8 @@ repos:
     hooks:
       - id: pylint
         name: pylint
-        pass_filenames: false
         args:
           [
-            "src", # Only lint src
             "-rn", # Only display messages
             "-sn", # Don't display the score
           ]
