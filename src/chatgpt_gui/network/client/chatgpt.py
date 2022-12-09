@@ -16,6 +16,7 @@ from typing import Any
 from uuid import UUID
 
 from PySide6.QtCore import *
+from PySide6.QtNetwork import *
 
 from ...constants import *
 from ...models import CaseInsensitiveDict
@@ -147,6 +148,83 @@ class Client(QObject):
         self._access_token = None
         if 'Authorization' in self.session.headers:
             self.session.headers.pop('Authorization')
+
+    @property
+    def proxy(self) -> str | None:
+        """Proxy for both the ChatGPT client and its Authenticator.
+
+        It follows this pattern, where square brackets mean optional and parenthesis means required:
+
+            [(protocol)://][(username[:(password)])@](host:port)
+
+        If protocol is not provided, it defaults to http.
+
+        :return: String representation of proxy if set, else None.
+        :raises ValueError: If proxy being set doesn't match regex
+            If proxy protocol is not either 'http' or 'socks5'
+        """
+        # If proxy has not been set, return early
+        proxy: QNetworkProxy = self.session.manager.proxy()
+        if proxy.type() == QNetworkProxy.ProxyType.DefaultProxy:
+            return None
+
+        # Get protocol from our proxy type
+        protocol: str = ''
+        match proxy.type():
+            case QNetworkProxy.ProxyType.HttpProxy:
+                protocol = 'http'
+            case QNetworkProxy.ProxyType.Socks5Proxy:
+                protocol = 'socks5'
+        protocol = f'{protocol}://'
+
+        # Format login information from our proxy
+        login: str = ''
+        if user := proxy.user():
+            login = user
+            if password := proxy.password():
+                login = f'{user}:{password}'
+            login = f'{login}@'
+
+        # Return the complete representation
+        return f'{protocol}{login}{proxy.hostName()}:{proxy.port()}'
+
+    @proxy.setter
+    def proxy(self, proxy: str) -> None:
+        if not (match := CG_PROXY_PATTERN.match(proxy)):
+            raise ValueError(f'Invalid proxy pattern. Must match {CG_PROXY_PATTERN}')
+
+        # Parse and get named capture group values
+        match_dict = match.groupdict()
+        protocol: str = match_dict.get('protocol', 'http')
+        username: str | None = match_dict.get('username')
+        password: str | None = match_dict.get('password')
+        host: str = match_dict['host']
+        port: int = int(match_dict['port'])
+
+        # Set the Client's NetworkSession proxy values
+        current_proxy: QNetworkProxy = self.session.manager.proxy()
+
+        match protocol:
+            case 'http':
+                current_proxy.setType(QNetworkProxy.ProxyType.HttpProxy)
+            case 'socks5':
+                current_proxy.setType(QNetworkProxy.ProxyType.Socks5Proxy)
+            case _:
+                raise ValueError('Proxy protocol must be either http or socks5.')
+
+        current_proxy.setUser(username or '')
+        current_proxy.setPassword(password or '')
+        current_proxy.setHostName(host)
+        current_proxy.setPort(port)
+
+        # Set the Authenticator's tls_client Session proxy value
+        self.authenticator.session.proxies[protocol] = proxy
+
+    @proxy.deleter
+    def proxy(self) -> None:
+        # Reset proxy values to default
+        self.session.manager.setProxy(QNetworkProxy.ProxyType.DefaultProxy)
+        self.authenticator.session.proxies.clear()
 
     @property
     def session_token(self) -> str | None:

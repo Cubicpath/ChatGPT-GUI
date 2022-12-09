@@ -9,6 +9,7 @@ __all__ = (
     'CG_CACHE_PATH',
     'CG_CONFIG_PATH',
     'CG_PACKAGE_NAME',
+    'CG_PROXY_PATTERN',
     'CG_RESOURCE_PATH',
     'CG_SESSION_PATH',
     'CG_SESSION_PATH_OLD',
@@ -73,6 +74,23 @@ CG_SESSION_PATH_OLD: Final[Path] = CG_CONFIG_PATH / '.session'
 """File containing ONLY session token. Deprecated."""
 
 # Patterns
+
+CG_PROXY_PATTERN: Final[re.Pattern] = re.compile(
+    r'(?:(?P<protocol>.+):\/\/)?'
+    r'(?:(?P<username>[^:]+)(?::(?P<password>[^:]+))?@)?'
+    r'(?P<host>[^:]+):(?P<port>\d+)'
+)
+"""Regex pattern for **parsing** proxies. This is not meant as validation.
+
+Username/Password/Host cannot contain a colon, but that's the only limitation.
+
+Examples:
+
+    - host:5555
+    - http://host:5555
+    - http://username@host:5555
+    - socks5://username:password@host:5555
+"""
 
 CG_URL_PATTERN: Final[re.Pattern] = re.compile(
     r'(?i)\b((?:https?:(?:/{1,3}|[a-z0-9%])|'
