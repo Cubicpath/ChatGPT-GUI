@@ -43,6 +43,7 @@ from ..tomlfile import PathTomlEncoder
 from ..tomlfile import TomlEvents
 from ..tomlfile import TomlFile
 from ..tomlfile import TomlValue
+from ..utils import format_tb
 from ..utils import has_package
 from ..utils import hide_windows_file
 from ..utils import http_code_map
@@ -183,7 +184,8 @@ class GetterApp(Singleton, QApplication):
         )
 
         self.client.authenticator.authenticationFailed.connect(
-            lambda email, e: self.show_dialog('errors.authentication_failed', description_args=(email, e))
+            lambda email, e: self.show_dialog('errors.authentication_failed', description_args=(email, e),
+                                              details_text=format_tb(e.__traceback__))
         )
 
     def _create_paths(self) -> None:
