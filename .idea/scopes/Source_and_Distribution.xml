@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Source and Distribution" pattern="(file[ChatGPT-GUI]:src//*||file[ChatGPT-GUI]:tests//*||file:pyproject.toml)&amp;&amp;!file:src/chatgpt_gui/py.typed||file[ChatGPT-GUI]:requirements//*" />
+</component>
