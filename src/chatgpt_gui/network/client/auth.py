@@ -3,8 +3,8 @@
 ###################################################################################################
 """Defines the OpenAI authenticator.
 
-As this using tls_client as opposed to NetworkSession, requests are 
-**NOT** asynchronous and will block the event loop until finished.
+As this package is using tls_client as opposed to NetworkSession, requests are NOT asynchronous.
+This means that Qt's event loop will be blocked until the Authenticator.authenticate() method calls handle_captcha()
 """
 from __future__ import annotations
 
@@ -310,4 +310,6 @@ class Authenticator(QObject):
         while not holder:
             QCoreApplication.processEvents()
 
+        # Disconnect to allow holder to be garbage collected
+        self.solveCaptcha.disconnect(holder.append)
         return holder[0]
