@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Better `Authenticator` error messages
+  - Now includes a traceback under the "Show Details..." button
 - Check for new versions on startup
+- `captcha.png` - created by Freepik
 
 ### Fixed
 - Upgrade & Restart dialog
