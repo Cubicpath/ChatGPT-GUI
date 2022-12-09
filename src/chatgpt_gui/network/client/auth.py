@@ -134,7 +134,10 @@ class Authenticator(QObject):
         if response.status_code != 200 or 'json' not in response.headers['Content-Type']:
             raise RuntimeError('Could not start auth0 login. Could be due to excessive login attempts.')
 
-        new_url: str = response.json()['url']
+        try:
+            new_url: str = response.json()['url']
+        except KeyError as e:
+            raise RuntimeError('New url was not provided by initial auth0 signin.') from e
 
         # -----------------------------------------------------------------------------------------
         # Step 4:
@@ -152,7 +155,10 @@ class Authenticator(QObject):
         if response.status_code != 302:
             raise RuntimeError(f'Unsuccessful request to given url "{new_url}".')
 
-        state: str = _STATE_PATTERN.findall(response.text)[0].split('"')[0]
+        try:
+            state: str = _STATE_PATTERN.findall(response.text)[0].split('"')[0]
+        except IndexError as e:
+            raise RuntimeError(f'Login state was not provided by {new_url}.') from e
 
         # -----------------------------------------------------------------------------------------
         # Step 5:
@@ -174,11 +180,15 @@ class Authenticator(QObject):
         captcha: str | None = None
         soup: BeautifulSoup = BeautifulSoup(response.text, 'html.parser')
         if soup.find('img', alt='captcha'):
-            captcha_svg: str = soup.find('img', alt='captcha')['src'].split(',')[1]  # type: ignore
-            decoded_svg: bytes = base64.decodebytes(captcha_svg.encode('ascii'))
+            try:
+                captcha_svg: str = soup.find('img', alt='captcha')['src'].split(',')[1]  # type: ignore
+                decoded_svg: bytes = base64.decodebytes(captcha_svg.encode('ascii'))
 
-            image: QImage = QImage()
-            image.loadFromData(decoded_svg)
+                image: QImage = QImage()
+                image.loadFromData(decoded_svg)
+            except Exception as e:
+                raise RuntimeError(f'Error rendering captcha: {e}') from e
+
             captcha = self.handle_captcha(image)
 
         # -----------------------------------------------------------------------------------------
@@ -227,7 +237,10 @@ class Authenticator(QObject):
         if response.status_code != 302:
             raise RuntimeError('Password or captcha was wrong.')
 
-        new_state: str = _STATE_PATTERN.findall(response.text)[0].split('"')[0]
+        try:
+            new_state: str = _STATE_PATTERN.findall(response.text)[0].split('"')[0]
+        except IndexError as e:
+            raise RuntimeError('Final login state was not provided after password.') from e
 
         # -----------------------------------------------------------------------------------------
         # Step 8:
