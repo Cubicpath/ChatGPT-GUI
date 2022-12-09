@@ -213,10 +213,12 @@ class Client(QObject):
 
     def get_image(self, url: str) -> bytes:
         """Get an image using ChatGPT.
-        
+
         This should be used for things like profile icons, which are behind an auth0 server.
 
-        :return: Url
+        :param url: Url of the image resource.
+        :return: Image's byte data.
+        :raises ValueError: If the response returned an error code.
         """
         response: Response = self._get('_next/image', params={
             'url': url,
@@ -225,7 +227,7 @@ class Client(QObject):
         })
 
         if not response.ok:
-            raise ValueError(f'Couldn\'t get image for {url} at {response.url}.')
+            raise ValueError(f'Couldn\'t get image for {url} at {response.url}. Error {response.code}')
 
         return response.data
 
