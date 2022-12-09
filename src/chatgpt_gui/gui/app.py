@@ -158,6 +158,8 @@ class GetterApp(Singleton, QApplication):
         self._create_windows()
         self.updateTranslations.emit()
 
+        self.version_checker.check_version(CG_PACKAGE_NAME)
+
     @property
     def first_launch(self) -> bool:
         """Return whether this is the first launch of the application.
