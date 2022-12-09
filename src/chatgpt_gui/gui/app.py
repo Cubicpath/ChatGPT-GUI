@@ -153,6 +153,7 @@ class GetterApp(Singleton, QApplication):
         # Must load client last, but before windows
         self.load_env(verbose=True)
         self.client = Client(self)
+        self._configure_client_proxy()
         self._connect_authenticator()
 
         # Setup window instances
@@ -173,6 +174,24 @@ class GetterApp(Singleton, QApplication):
     def windows(self) -> dict[str, QWidget]:
         """Return a copy of the self._windows dictionary."""
         return self._windows.copy()
+
+    def _configure_client_proxy(self) -> None:
+        if protocol := self.settings['network/proxy/protocol']:
+            protocol_str = 'socks5' if protocol == 2 else 'http'
+            protocol_str = f'{protocol_str}://'
+
+            # Format login information from our proxy
+            login: str = ''
+            if user := self.settings['network/proxy/username']:
+                login = user  # type: ignore
+                if password := self.settings['network/proxy/password']:
+                    login = f'{user}:{password}'
+                login = f'{login}@'
+
+            host: str = self.settings['network/proxy/host']  # type: ignore
+            port: int = int(self.settings['network/proxy/port'])  # type: ignore
+
+            self.client.proxy = f'{protocol_str}{login}{host}:{port}'
 
     def _connect_authenticator(self) -> None:
         self.client.authenticationRequired.connect(

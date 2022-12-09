@@ -216,6 +216,7 @@ class Client(QObject):
         current_proxy.setPassword(password or '')
         current_proxy.setHostName(host)
         current_proxy.setPort(port)
+        self.session.manager.setProxy(current_proxy)
 
         # Set the Authenticator's tls_client Session proxy value
         self.authenticator.session.proxies[protocol] = proxy
