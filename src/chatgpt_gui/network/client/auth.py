@@ -1,7 +1,11 @@
 ###################################################################################################
 #                              MIT Licence (C) 2022 Cubicpath@Github                              #
 ###################################################################################################
-"""Defines the OpenAI authenticator."""
+"""Defines the OpenAI authenticator.
+
+As this using tls_client as opposed to NetworkSession, requests are 
+**NOT** asynchronous and will block the event loop until finished.
+"""
 from __future__ import annotations
 
 __all__ = (
