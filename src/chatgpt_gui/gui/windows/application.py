@@ -213,11 +213,16 @@ class AppWindow(Singleton, QMainWindow):
 
         # Get cached user icon
         if (store_key := user.id) in app().icon_store:
-            self.account_action.setIcon(app().icon_store['account'])
+            self.account_action.setIcon(app().icon_store[store_key])
             return
 
         # Get non-cached user icon, then cache
-        image_bytes: bytes = app().client.get_image(user.image)
+        try:
+            image_bytes: bytes = app().client.get_image(user.image)
+        except ValueError:
+            self.account_action.setIcon(app().icon_store['account'])
+            return
+
         pixmap = QPixmap()
         pixmap.loadFromData(image_bytes)
 
