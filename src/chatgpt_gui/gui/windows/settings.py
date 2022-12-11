@@ -17,6 +17,7 @@ from PySide6.QtWidgets import *
 from ...constants import *
 from ...events import EventBus
 from ...models import DeferredCallable
+from ...models import DistributedCallable
 from ...models import Singleton
 from ...tomlfile import TomlEvents
 from ...utils import init_layouts
@@ -54,9 +55,6 @@ class SettingsWindow(Singleton, QWidget):
             TomlEvents.Fail, event_predicate=lambda event: event.failure == 'import'
         )
 
-        self.theme_dropdown: QComboBox
-        self.token_set_button: QPushButton
-        self.token_field: QLineEdit
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -116,10 +114,14 @@ class SettingsWindow(Singleton, QWidget):
         # See: https://stackoverflow.com/questions/64055314#answer-66617839
         (
             self.token_set_button, self.token_clear_button,
-            self.theme_dropdown, self.token_field
+            self.theme_dropdown, self.proxy_protocol_dropdown,
+            self.proxy_group, self.proxy_host_field, self.proxy_port_field,
+            self.proxy_username_field, self.proxy_password_field, self.token_field
         ) = (
             QPushButton(self), QPushButton(self),
-            TranslatableComboBox(self), PasteLineEdit(self)
+            TranslatableComboBox(self), TranslatableComboBox(self),
+            QGroupBox(self), PasteLineEdit(self), PasteLineEdit(self),
+            PasteLineEdit(self), PasteLineEdit(self), PasteLineEdit(self)
         )
 
         init_objects({
@@ -165,6 +167,17 @@ class SettingsWindow(Singleton, QWidget):
                 'pasted': set_token, 'returnPressed': self.token_set_button.click,
                 'size': {'minimum': (220, None)}, 'alignment': Qt.AlignmentFlag.AlignCenter
             },
+            self.proxy_host_field: {
+                'disabled': app().settings['network/proxy/protocol']
+            },
+            self.proxy_port_field: {
+                'disabled': app().settings['network/proxy/protocol'],
+                'size': {'maximum': (50, None)}
+            },
+            self.proxy_username_field: {},
+            self.proxy_password_field: {
+                'echoMode': QLineEdit.EchoMode.Password,
+            },
 
             # Dropdowns
             self.theme_dropdown: {
@@ -175,14 +188,40 @@ class SettingsWindow(Singleton, QWidget):
                 ),
                 'items': (theme.display_name for theme in app().sorted_themes())
             },
+            self.proxy_protocol_dropdown: {
+                'activated': DeferredCallable(
+                    app().settings.__setitem__,
+                    'network/proxy/protocol',
+                    self.proxy_protocol_dropdown.currentIndex
+                ),
+                'items': (
+                    'gui.settings.proxy.protocol.none',
+                    'gui.settings.proxy.protocol.http',
+                    'gui.settings.proxy.protocol.socks5'
+                )
+            },
+
+            # Groups
+            self.proxy_group: {
+                'layout': (proxy_group_layout := QVBoxLayout()),
+                'flat': True
+            }
         })
 
         app().init_translations({
             self.setWindowTitle: 'gui.settings.title',
+            self.proxy_protocol_dropdown.translate_items: '',
             self.theme_dropdown.translate_items: '',
+            self.proxy_group.setTitle: 'gui.settings.proxy.general',
 
             # Labels
             theme_label.setText: 'gui.settings.theme',
+
+            # Line Editors
+            self.proxy_host_field.setPlaceholderText: 'gui.settings.proxy.host.placeholder_text',
+            self.proxy_port_field.setPlaceholderText: 'gui.settings.proxy.port.placeholder_text',
+            self.proxy_username_field.setPlaceholderText: 'gui.settings.proxy.username.placeholder_text',
+            self.proxy_password_field.setPlaceholderText: 'gui.settings.proxy.password.placeholder_text',
 
             # Buttons
             save_button.setText: 'gui.settings.save',
@@ -211,8 +250,21 @@ class SettingsWindow(Singleton, QWidget):
             (theme_layout := QHBoxLayout()): {
                 'items': [theme_label, self.theme_dropdown]
             },
+            (proxy_server_layout := QHBoxLayout()): {
+                'items': [self.proxy_host_field, self.proxy_port_field]
+            },
+            (proxy_login_layout := QHBoxLayout()): {
+                'items': [self.proxy_username_field, self.proxy_password_field]
+            },
+            proxy_group_layout: {
+                'items': [
+                    self.proxy_protocol_dropdown,
+                    proxy_server_layout,
+                    proxy_login_layout
+                ]
+            },
             (middle := QVBoxLayout()): {
-                'items': [theme_layout]
+                'items': [theme_layout, self.proxy_group]
             },
 
             # Add top widgets
@@ -233,6 +285,13 @@ class SettingsWindow(Singleton, QWidget):
             }
         })
 
+        EventBus['settings'].subscribe(DistributedCallable((
+            lambda event: self.proxy_host_field.setDisabled(not event.new),
+            lambda event: self.proxy_port_field.setDisabled(not event.new),
+            lambda event: self.proxy_username_field.setDisabled(not event.new),
+            lambda event: self.proxy_password_field.setDisabled(not event.new)
+        )), TomlEvents.Set, lambda event: event.key == 'network/proxy/protocol')
+
         EventBus['settings'].subscribe(
             DeferredCallable(save_button.setDisabled, False),
             TomlEvents.Set, lambda event: event.old != event.new)
@@ -252,7 +311,8 @@ class SettingsWindow(Singleton, QWidget):
     def refresh_dropdowns(self) -> None:
         """Refresh all dropdown widgets with the current settings assigned to them."""
         settings = app().settings
-        self.theme_dropdown.setCurrentIndex(app().theme_index_map[settings['gui/themes/selected']])     # type: ignore
+        self.theme_dropdown.setCurrentIndex(app().theme_index_map[settings['gui/themes/selected']])  # type: ignore
+        self.proxy_protocol_dropdown.setCurrentIndex(settings['network/proxy/protocol'])             # type: ignore
 
     # # # # # Events
 
