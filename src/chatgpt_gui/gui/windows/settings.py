@@ -108,6 +108,26 @@ class SettingsWindow(Singleton, QWidget):
             hide_token()
             self.token_clear_button.setDisabled(True)
 
+        def field_int(field: QLineEdit) -> int:
+            return int(field.text() or 0)
+
+        def connect_to_proxy() -> None:
+            # Set settings if user didn't press return in line edits
+            app().settings['network/proxy/host'] = self.proxy_host_field.text()
+            app().settings['network/proxy/port'] = field_int(self.proxy_port_field)
+            app().settings['network/proxy/username'] = self.proxy_username_field.text()
+            app().settings['network/proxy/password'] = self.proxy_password_field.text()
+
+            # Guard clause for update_client_proxy
+            if (
+                    (not (self.proxy_host_field.text() and self.proxy_port_field.text())) or
+                    (self.proxy_password_field.text() and not self.proxy_username_field.text())
+            ):
+                app().show_dialog('errors.proxy_missing_host_or_port', self)
+                return
+
+            app().update_client_proxy()
+
         # Define widget attributes
         # Cannot be defined in init_objects() as walrus operators are not allowed for object attribute assignment.
         # This works in the standard AST, but is a seemingly arbitrary limitation set by the interpreter.
@@ -116,12 +136,14 @@ class SettingsWindow(Singleton, QWidget):
             self.token_set_button, self.token_clear_button,
             self.theme_dropdown, self.proxy_protocol_dropdown,
             self.proxy_group, self.proxy_host_field, self.proxy_port_field,
-            self.proxy_username_field, self.proxy_password_field, self.token_field
+            self.proxy_username_field, self.proxy_password_field, self.connect_proxy_button,
+            self.token_field
         ) = (
             QPushButton(self), QPushButton(self),
             TranslatableComboBox(self), TranslatableComboBox(self),
             QGroupBox(self), PasteLineEdit(self), PasteLineEdit(self),
-            PasteLineEdit(self), PasteLineEdit(self), PasteLineEdit(self)
+            PasteLineEdit(self), PasteLineEdit(self), QPushButton(self),
+            PasteLineEdit(self)
         )
 
         init_objects({
@@ -148,6 +170,10 @@ class SettingsWindow(Singleton, QWidget):
             },
             (open_editor_button := QPushButton(self)): {
                 'clicked': DeferredCallable(QDesktopServices.openUrl, lambda: QUrl(app().settings.path.as_uri()))
+            },
+            self.connect_proxy_button: {
+                'disabled': not app().settings['network/proxy/protocol'],
+                'clicked': connect_to_proxy
             },
             (edit_token_button := QPushButton(self)): {
                 'clicked': toggle_token_visibility
@@ -179,11 +205,12 @@ class SettingsWindow(Singleton, QWidget):
             self.proxy_port_field: {
                 'disabled': not app().settings['network/proxy/protocol'],
                 'size': {'maximum': (50, None)},
-                'text': str(app().settings['network/proxy/port']),
+                'text': str(app().settings['network/proxy/port'] or ''),
+                'validator': QIntValidator(0, 65535),
                 'returnPressed': DeferredCallable(
                     app().settings.__setitem__,
                     'network/proxy/port',
-                    DeferredCallable(int, self.proxy_port_field.text)
+                    field_int(self.proxy_port_field)
                 )
             },
             self.proxy_username_field: {
@@ -256,6 +283,7 @@ class SettingsWindow(Singleton, QWidget):
             import_button.setText: 'gui.settings.import',
             export_button.setText: 'gui.settings.export',
             open_editor_button.setText: 'gui.settings.open_editor',
+            self.connect_proxy_button.setText: 'gui.settings.proxy.connect',
             edit_token_button.setText: 'gui.settings.auth.edit',
             self.token_set_button.setText: 'gui.settings.auth.set',
             self.token_clear_button.setText: 'gui.settings.auth.clear_token'
@@ -287,7 +315,8 @@ class SettingsWindow(Singleton, QWidget):
                 'items': [
                     self.proxy_protocol_dropdown,
                     proxy_server_layout,
-                    proxy_login_layout
+                    proxy_login_layout,
+                    self.connect_proxy_button
                 ]
             },
             (middle := QVBoxLayout()): {
@@ -316,7 +345,8 @@ class SettingsWindow(Singleton, QWidget):
             lambda event: self.proxy_host_field.setDisabled(not event.new),
             lambda event: self.proxy_port_field.setDisabled(not event.new),
             lambda event: self.proxy_username_field.setDisabled(not event.new),
-            lambda event: self.proxy_password_field.setDisabled(not event.new)
+            lambda event: self.proxy_password_field.setDisabled(not event.new),
+            lambda event: self.connect_proxy_button.setDisabled(not event.new)
         )), TomlEvents.Set, lambda event: event.key == 'network/proxy/protocol')
 
         EventBus['settings'].subscribe(

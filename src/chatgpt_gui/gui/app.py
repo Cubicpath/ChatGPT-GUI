@@ -134,7 +134,7 @@ class GetterApp(Singleton, QApplication):
         # Must load client last, but before windows
         self.load_env(verbose=True)
         self.client = Client(self)
-        self._configure_client_proxy()
+        self.update_client_proxy()
         self._connect_events()
 
         # Setup window instances
@@ -155,24 +155,6 @@ class GetterApp(Singleton, QApplication):
     def windows(self) -> dict[str, QWidget]:
         """Return a copy of the self._windows dictionary."""
         return self._windows.copy()
-
-    def _configure_client_proxy(self) -> None:
-        if protocol := self.settings['network/proxy/protocol']:
-            protocol_str = 'socks5' if protocol == 2 else 'http'
-            protocol_str = f'{protocol_str}://'
-
-            # Format login information from our proxy
-            if login := self.settings['network/proxy/username']:
-                if password := self.settings['network/proxy/password']:
-                    login = f'{login}:{password}'
-                login = f'{login}@'
-
-            host: str = self.settings['network/proxy/host']  # type: ignore
-            port: int = self.settings['network/proxy/port']  # type: ignore
-
-            self.client.proxy = f'{protocol_str}{login}{host}:{port}'
-        else:
-            del self.client.proxy
 
     def _create_paths(self) -> None:
         """Create files and directories if they do not exist."""
@@ -235,8 +217,8 @@ class GetterApp(Singleton, QApplication):
             TomlEvents.Set, event_predicate=lambda e: e.key == 'gui/themes/selected')
 
         EventBus['settings'].subscribe(
-            DeferredCallable(self._configure_client_proxy),
-            TomlEvents.Set, lambda event: 'network/proxy' in event.key)
+            DeferredCallable(self.update_client_proxy),
+            TomlEvents.Set, lambda event: event.key == 'network/proxy/protocol' and not event.new)
 
         self.updateTranslations.connect(lambda: setattr(self.translator, 'language', self.settings['language']))
         self.updateTranslations.connect(lambda: self.setApplicationDisplayName(self.translator('app.name')))
@@ -593,3 +575,25 @@ class GetterApp(Singleton, QApplication):
     def start_worker(self, runnable: Callable | QRunnable, priority: int = 0) -> None:
         """Start a runnable from the application :py:class:`QThreadPool`."""
         self._thread_pool.start(runnable, priority)
+
+    def update_client_proxy(self) -> None:
+        """Update the client proxy with the current application settings."""
+        if protocol := self.settings['network/proxy/protocol']:
+            host: str = self.settings['network/proxy/host']  # type: ignore
+            port: int = self.settings['network/proxy/port']  # type: ignore
+
+            if not (host and port):
+                return
+
+            protocol_str = 'socks5' if protocol == 2 else 'http'
+            protocol_str = f'{protocol_str}://'
+
+            # Format login information from our proxy
+            if login := self.settings['network/proxy/username']:
+                if password := self.settings['network/proxy/password']:
+                    login = f'{login}:{password}'
+                login = f'{login}@'
+
+            self.client.proxy = f'{protocol_str}{login}{host}:{port}'
+        else:
+            del self.client.proxy
