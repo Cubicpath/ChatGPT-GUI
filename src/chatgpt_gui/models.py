@@ -307,7 +307,11 @@ class DistributedCallable(_AbstractCallable, Generic[_CT, _PT, _KT]):
 
         :return: The results of each callable, packaged in a tuple.
         """
-        results = tuple(func(*self.args, **self.kwargs) for func in self.callables)
+        # Add additional arguments from local args
+        args = self.args + args
+        kwargs |= self.kwargs
+
+        results = tuple(func(*args, **kwargs) for func in self.callables)
         return results
 
     def generate(self, *args, **kwargs) -> Generator[Any, None, None]:
