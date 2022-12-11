@@ -168,14 +168,17 @@ class SettingsWindow(Singleton, QWidget):
                 'size': {'minimum': (220, None)}, 'alignment': Qt.AlignmentFlag.AlignCenter
             },
             self.proxy_host_field: {
-                'disabled': app().settings['network/proxy/protocol']
+                'disabled': not app().settings['network/proxy/protocol']
             },
             self.proxy_port_field: {
-                'disabled': app().settings['network/proxy/protocol'],
+                'disabled': not app().settings['network/proxy/protocol'],
                 'size': {'maximum': (50, None)}
             },
-            self.proxy_username_field: {},
+            self.proxy_username_field: {
+                'disabled': not app().settings['network/proxy/protocol']
+            },
             self.proxy_password_field: {
+                'disabled': not app().settings['network/proxy/protocol'],
                 'echoMode': QLineEdit.EchoMode.Password,
             },
 
