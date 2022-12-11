@@ -128,25 +128,6 @@ class GetterApp(Singleton, QApplication):
         self.load_themes()  # Depends on icon_store, settings, themes, theme_index_map
         self.load_icons()   # Depends on icon_store, session
 
-        # Register callables to events
-        EventBus['settings'] = self.settings.event_bus
-        EventBus['settings'].subscribe(
-            DeferredCallable(self.load_themes),
-            TomlEvents.Import)
-
-        EventBus['settings'].subscribe(
-            DeferredCallable(self.updateTranslations.emit),
-            TomlEvents.Import)
-
-        EventBus['settings'].subscribe(
-            DeferredCallable(self.update_stylesheet),
-            TomlEvents.Set, event_predicate=lambda e: e.key == 'gui/themes/selected')
-
-        self.updateTranslations.connect(lambda: self.translator.__setattr__('language', self.settings['language']))
-        self.updateTranslations.connect(lambda: self.setApplicationDisplayName(self.translator('app.name')))
-        self.updateTranslations.connect(self._registered_translations)
-        self.updateTranslations.connect(self._translate_http_code_map)
-
         if not self.settings['ignore_updates']:
             self.version_checker.newerVersion.connect(self._upgrade_version_dialog)
 
@@ -154,11 +135,7 @@ class GetterApp(Singleton, QApplication):
         self.load_env(verbose=True)
         self.client = Client(self)
         self._configure_client_proxy()
-        self._connect_authenticator()
-
-        EventBus['settings'].subscribe(
-            DeferredCallable(self._configure_client_proxy),
-            TomlEvents.Set, lambda event: 'network/proxy' in event.key)
+        self._connect_events()
 
         # Setup window instances
         self._create_windows()
@@ -196,20 +173,6 @@ class GetterApp(Singleton, QApplication):
             self.client.proxy = f'{protocol_str}{login}{host}:{port}'
         else:
             del self.client.proxy
-
-    def _connect_authenticator(self) -> None:
-        self.client.authenticationRequired.connect(
-            lambda: self.show_dialog('warnings.empty_token')
-        )
-
-        self.client.authenticator.authenticationSuccessful.connect(
-            lambda _, user: self.show_dialog('information.authentication_success', description_args=(user.email,))
-        )
-
-        self.client.authenticator.authenticationFailed.connect(
-            lambda email, e: self.show_dialog('errors.authentication_failed', description_args=(email, e),
-                                              details_text=format_tb(e.__traceback__))
-        )
 
     def _create_paths(self) -> None:
         """Create files and directories if they do not exist."""
@@ -256,6 +219,39 @@ class GetterApp(Singleton, QApplication):
         """Translate the HTTP code map to the current language."""
         for code in (400, 401, 403, 404, 405, 406):
             http_code_map[code] = (http_code_map[code][0], self.translator(f'network.http.codes.{code}.description'))
+
+    def _connect_events(self) -> None:
+        EventBus['settings'] = self.settings.event_bus
+        EventBus['settings'].subscribe(
+            DeferredCallable(self.load_themes),
+            TomlEvents.Import)
+
+        EventBus['settings'].subscribe(
+            DeferredCallable(self.updateTranslations.emit),
+            TomlEvents.Import)
+
+        EventBus['settings'].subscribe(
+            DeferredCallable(self.update_stylesheet),
+            TomlEvents.Set, event_predicate=lambda e: e.key == 'gui/themes/selected')
+
+        EventBus['settings'].subscribe(
+            DeferredCallable(self._configure_client_proxy),
+            TomlEvents.Set, lambda event: 'network/proxy' in event.key)
+
+        self.updateTranslations.connect(lambda: setattr(self.translator, 'language', self.settings['language']))
+        self.updateTranslations.connect(lambda: self.setApplicationDisplayName(self.translator('app.name')))
+        self.updateTranslations.connect(self._registered_translations)
+        self.updateTranslations.connect(self._translate_http_code_map)
+
+        self.client.authenticationRequired.connect(
+            lambda: self.show_dialog('warnings.empty_token'))
+
+        self.client.authenticator.authenticationSuccessful.connect(
+            lambda _, user: self.show_dialog('information.authentication_success', description_args=(user.email,)))
+
+        self.client.authenticator.authenticationFailed.connect(
+            lambda email, e: self.show_dialog('errors.authentication_failed', description_args=(email, e),
+                                              details_text=format_tb(e.__traceback__)))
 
     def init_translations(self, translation_calls: dict[Callable, str | tuple[Any, ...]]) -> None:
         """Initialize the translation of all objects.
