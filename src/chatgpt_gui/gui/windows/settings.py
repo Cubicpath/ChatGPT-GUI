@@ -168,18 +168,42 @@ class SettingsWindow(Singleton, QWidget):
                 'size': {'minimum': (220, None)}, 'alignment': Qt.AlignmentFlag.AlignCenter
             },
             self.proxy_host_field: {
-                'disabled': not app().settings['network/proxy/protocol']
+                'disabled': not app().settings['network/proxy/protocol'],
+                'text': app().settings['network/proxy/host'],
+                'returnPressed': DeferredCallable(
+                    app().settings.__setitem__,
+                    'network/proxy/host',
+                    self.proxy_host_field.text
+                )
             },
             self.proxy_port_field: {
                 'disabled': not app().settings['network/proxy/protocol'],
-                'size': {'maximum': (50, None)}
+                'size': {'maximum': (50, None)},
+                'text': str(app().settings['network/proxy/port']),
+                'returnPressed': DeferredCallable(
+                    app().settings.__setitem__,
+                    'network/proxy/port',
+                    DeferredCallable(int, self.proxy_port_field.text)
+                )
             },
             self.proxy_username_field: {
-                'disabled': not app().settings['network/proxy/protocol']
+                'disabled': not app().settings['network/proxy/protocol'],
+                'text': app().settings['network/proxy/username'],
+                'returnPressed': DeferredCallable(
+                    app().settings.__setitem__,
+                    'network/proxy/username',
+                    self.proxy_username_field.text
+                )
             },
             self.proxy_password_field: {
                 'disabled': not app().settings['network/proxy/protocol'],
                 'echoMode': QLineEdit.EchoMode.Password,
+                'text': app().settings['network/proxy/password'],
+                'returnPressed': DeferredCallable(
+                    app().settings.__setitem__,
+                    'network/proxy/password',
+                    self.proxy_password_field.text
+                )
             },
 
             # Dropdowns

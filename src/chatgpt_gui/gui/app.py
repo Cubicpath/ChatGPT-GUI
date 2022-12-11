@@ -156,6 +156,10 @@ class GetterApp(Singleton, QApplication):
         self._configure_client_proxy()
         self._connect_authenticator()
 
+        EventBus['settings'].subscribe(
+            DeferredCallable(self._configure_client_proxy),
+            TomlEvents.Set, lambda event: 'network/proxy' in event.key)
+
         # Setup window instances
         self._create_windows()
         self.updateTranslations.emit()
@@ -181,17 +185,17 @@ class GetterApp(Singleton, QApplication):
             protocol_str = f'{protocol_str}://'
 
             # Format login information from our proxy
-            login: str = ''
-            if user := self.settings['network/proxy/username']:
-                login = user  # type: ignore
+            if login := self.settings['network/proxy/username']:
                 if password := self.settings['network/proxy/password']:
-                    login = f'{user}:{password}'
+                    login = f'{login}:{password}'
                 login = f'{login}@'
 
             host: str = self.settings['network/proxy/host']  # type: ignore
-            port: int = int(self.settings['network/proxy/port'])  # type: ignore
+            port: int = self.settings['network/proxy/port']  # type: ignore
 
             self.client.proxy = f'{protocol_str}{login}{host}:{port}'
+        else:
+            del self.client.proxy
 
     def _connect_authenticator(self) -> None:
         self.client.authenticationRequired.connect(
