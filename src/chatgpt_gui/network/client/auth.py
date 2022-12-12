@@ -14,16 +14,20 @@ __all__ = (
 
 import re
 import base64
+from typing import Any
 from typing import Final
 from urllib.parse import quote
 
+import datetime as dt
 from bs4 import BeautifulSoup
 from PySide6.QtCore import *
 from PySide6.QtGui import *
-from tls_client import Session
+from tls_client import Session as TlsSession
+from undetected_chromedriver import Chrome
+from undetected_chromedriver import ChromeOptions
 
 from ...constants import *
-from .structures import User
+from .structures import Session
 
 
 _STATE_PATTERN: Final[re.Pattern] = re.compile(r'state=(.*)')
@@ -32,14 +36,14 @@ _STATE_PATTERN: Final[re.Pattern] = re.compile(r'state=(.*)')
 class Authenticator(QObject):
     """Object which handles authenticating users to OpenAI.
 
-    Based on https://github.com/rawandahmad698/PyChatGPT
+    Based on https://github.com/acheong08/ChatGPT and https://github.com/rawandahmad698/PyChatGPT
     """
 
     authenticationFailed = Signal(str, Exception)
     """Emits the username and exception when Authenticator.authenticate() raises an Exception"""
 
-    authenticationSuccessful = Signal(str, User)
-    """Emits the session_token on success of Authenticator.authenticate()."""
+    authenticationSuccessful = Signal(Session)
+    """Emits the Session on success of Authenticator.authenticate()."""
 
     captchaEncountered = Signal(QImage)
     """Emits a captcha that needs to be solved."""
@@ -60,7 +64,8 @@ class Authenticator(QObject):
 
         self.username: str | None = username
         self.password: str | None = password
-        self.session = Session(client_identifier='chrome_105')
+        self.user_agent: str | None = None
+        self.session = TlsSession(client_identifier='chrome_105')
 
     def _authenticate(self) -> None:
         """Run all steps.
@@ -91,15 +96,16 @@ class Authenticator(QObject):
         # Make a request to https://chat.openai.com/auth/login
         # This will block us (403 Request Blocked) early if detected as bot.
         # -----------------------------------------------------------------------------------------
-        if self.session.get(url='https://chat.openai.com/auth/login', headers={
-            'Host': 'ask.openai.com',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'User-Agent': CG_USER_AGENT,
-            'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-        }).status_code != 200:
-            raise RuntimeError('Could not get login page.')
+        # if self.session.get(url='https://chat.openai.com/auth/login', headers={
+        #     'Host': 'ask.openai.com',
+        #     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        #     'User-Agent': self.user_agent,
+        #     'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+        #     'Accept-Encoding': 'gzip, deflate, br',
+        #     'Connection': 'keep-alive',
+        # }).status_code != 200:
+        #     raise RuntimeError('Could not get login page.')
+        self.cloudflare_clearance()
 
         # -----------------------------------------------------------------------------------------
         # Step 2:
@@ -109,7 +115,7 @@ class Authenticator(QObject):
             'Host': 'ask.openai.com',
             'Accept': '*/*',
             'Connection': 'keep-alive',
-            'User-Agent': CG_USER_AGENT,
+            'User-Agent': self.user_agent,
             'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
             'Referer': 'https://chat.openai.com/auth/login',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -128,7 +134,7 @@ class Authenticator(QObject):
             'Origin': 'https://chat.openai.com',
             'Connection': 'keep-alive',
             'Accept': '*/*',
-            'User-Agent': CG_USER_AGENT,
+            'User-Agent': self.user_agent,
             'Referer': 'https://chat.openai.com/auth/login',
             'Content-Length': '100',
             'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
@@ -151,7 +157,7 @@ class Authenticator(QObject):
             'Host': 'auth0.openai.com',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Connection': 'keep-alive',
-            'User-Agent': CG_USER_AGENT,
+            'User-Agent': self.user_agent,
             'Accept-Language': 'en-US,en;q=0.9',
             'Referer': 'https://chat.openai.com/',
         })
@@ -173,7 +179,7 @@ class Authenticator(QObject):
             'Host': 'auth0.openai.com',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Connection': 'keep-alive',
-            'User-Agent': CG_USER_AGENT,
+            'User-Agent': self.user_agent,
             'Accept-Language': 'en-US,en;q=0.9',
             'Referer': 'https://chat.openai.com/',
         })
@@ -212,7 +218,7 @@ class Authenticator(QObject):
             'Origin': 'https://auth0.openai.com',
             'Connection': 'keep-alive',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'User-Agent': CG_USER_AGENT,
+            'User-Agent': self.user_agent,
             'Referer': f'https://auth0.openai.com/u/login/identifier?state={state}',
             'Accept-Language': 'en-US,en;q=0.9',
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -232,7 +238,7 @@ class Authenticator(QObject):
             'Origin': 'https://auth0.openai.com',
             'Connection': 'keep-alive',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'User-Agent': CG_USER_AGENT,
+            'User-Agent': self.user_agent,
             'Referer': f'https://auth0.openai.com/u/login/password?state={state}',
             'Accept-Language': 'en-US,en;q=0.9',
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -255,7 +261,7 @@ class Authenticator(QObject):
             'Host': 'auth0.openai.com',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Connection': 'keep-alive',
-            'User-Agent': CG_USER_AGENT,
+            'User-Agent': self.user_agent,
             'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
             'Referer': f'https://auth0.openai.com/u/login/password?state={state}',
         }, allow_redirects=True)
@@ -274,12 +280,22 @@ class Authenticator(QObject):
             'Host': 'chat.openai.com',
             'Accept': '*/*',
             'Connection': 'keep-alive',
-            'User-Agent': CG_USER_AGENT,
+            'User-Agent': self.user_agent,
             'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
         })
 
-        user: User = User.from_json(response.json()['user'])
-        self.authenticationSuccessful.emit(session_token, user)
+        session: Session = Session.from_json({
+            'user': response.json()['user'],
+            'cloudflare': {
+                'bm': self.session.cookies.get('__cf_bm'),
+                'clearance': self.session.cookies.get('cf_clearance'),
+                'expires': (dt.datetime.now() + dt.timedelta(hours=1)).strftime(CG_DATE_FORMAT)
+            },
+            'expires': response.json()['expires'],
+            'token': session_token,
+            'user_agent': self.user_agent
+        })
+        self.authenticationSuccessful.emit(session)
 
     def authenticate(self) -> None:
         """Authenticate self to OpenAI using email and password.
@@ -298,6 +314,48 @@ class Authenticator(QObject):
             self._authenticate()
         except Exception as e:
             self.authenticationFailed.emit(self.username, e)
+
+    def cloudflare_clearance(self) -> None:
+        """Set cf_clearance cookie and associated user agent."""
+
+        def set_cookies(message: dict[str, Any]) -> None:
+            if not (set_cookie_header := message.get('params', {}).get('headers', {}).get('set-cookie')):
+                return
+
+            for cookie_name in ('cf_clearance',):
+                # Use regex to get the cookies
+                pattern = re.compile(f'{cookie_name}=.*?;')
+                if match := pattern.match(set_cookie_header):
+                    # remove the semicolon and name from the string
+                    raw_cookie = match.group(0)
+                    self.session.cookies.set(
+                        name=cookie_name,
+                        value=raw_cookie.split('=')[-1],
+                        domain='.chat.openai.com'
+                    )
+
+        def set_user_agent(message: dict[str, Any]) -> None:
+            self.user_agent = message.get('params', {}).get('headers', {}).get('user-agent')
+
+        options = ChromeOptions()
+        for argument in (
+                '--disable-extensions', '--disable-application-cache',
+                '--disable-gpu', '--no-sandbox',
+                '--disable-setuid-sandbox', '--disable-dev-shm-usage',
+                '--incognito'
+        ):
+            options.add_argument(argument)
+
+        driver = Chrome(enable_cdp_events=True, options=options)
+        driver.add_cdp_listener('Network.responseReceivedExtraInfo', set_cookies)
+        driver.add_cdp_listener('Network.requestWillBeSentExtraInfo', set_user_agent)
+        driver.get('https://chat.openai.com/chat')
+
+        while not self.user_agent or not self.session.cookies.get('cf_clearance'):
+            QCoreApplication.processEvents()
+
+        driver.close()
+        driver.quit()
 
     def handle_captcha(self, image: QImage) -> str:
         """Wait for the application implementation to finish the captcha.

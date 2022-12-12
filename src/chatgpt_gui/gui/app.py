@@ -229,7 +229,7 @@ class GetterApp(Singleton, QApplication):
             lambda: self.show_dialog('warnings.empty_token'))
 
         self.client.authenticator.authenticationSuccessful.connect(
-            lambda _, user: self.show_dialog('information.authentication_success', description_args=(user.email,)))
+            lambda sess: self.show_dialog('information.authentication_success', description_args=(sess.user.email,)))
 
         self.client.authenticator.authenticationFailed.connect(
             lambda email, e: self.show_dialog('errors.authentication_failed', description_args=(email, e),

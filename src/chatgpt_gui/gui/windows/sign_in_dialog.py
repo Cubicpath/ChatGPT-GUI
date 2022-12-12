@@ -25,7 +25,7 @@ class SignInDialog(QWidget):
         """Create a new :py:class:`SignInDialog`."""
         super().__init__(None)
 
-        app().client.authenticator.authenticationSuccessful.connect(self.close)
+        app().client.authenticator.authenticationSuccessful.connect(DeferredCallable(self.close))
         app().client.authenticator.authenticationFailed.connect(DeferredCallable(self._reset_fields))
 
         self._init_ui()

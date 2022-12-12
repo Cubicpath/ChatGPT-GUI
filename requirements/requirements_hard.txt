@@ -5,8 +5,8 @@
 PySide6-Essentials == 6.4.1
     shiboken6 == 6.4.1
 
-# auth0 TLS Fingerprinting bypasser
-tls-client == 0.1.5
+# Cloudflare bypass
+undetected-chromedriver == 3.1.7
 
 # HTML parser
 beautifulsoup4 == 4.11.1

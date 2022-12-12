@@ -8,14 +8,18 @@ __all__ = (
     'Action',
     'Conversation',
     'Message',
+    'Session',
     'User',
 )
 
+import datetime as dt
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Any
 from uuid import UUID
 from uuid import uuid4
+
+from ...constants import *
 
 
 @dataclass
@@ -138,4 +142,66 @@ class User:
             'picture': self.picture,
             'groups': self.groups,
             'features': self.features
+        }
+
+
+@dataclass
+class Session:
+    """OpenAI Session Data."""
+
+    user: User | None
+    cf_bm: str | None
+    cf_clearance: str | None
+    cf_expires: dt.datetime | None
+    session_expires: dt.datetime | None
+    session_token: str | None
+    user_agent: str | None
+
+    @property
+    def cf_timestamp(self) -> int:
+        """Cloudflare clearance timestamp, from epoch.
+
+        :raises ValueError: If the clearance token is None.
+        """
+        if self.cf_clearance is None:
+            raise ValueError('Cannot get timestamp from null clearance token.')
+
+        return int(self.cf_clearance.split('-')[-3])
+
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> Session:
+        """Load data from a JSON representation."""
+        cf_data: dict[str, Any] = data.get('cloudflare', {})
+
+        if (user := data.get('user')) is not None:
+            user = User.from_json(user)
+
+        if (cf_expires := cf_data.get('expires')) is not None:
+            cf_expires = dt.datetime.strptime(cf_expires, CG_DATE_FORMAT)  # type: ignore
+
+        if (session_expires := data.get('expires')) is not None:
+            session_expires = dt.datetime.strptime(session_expires, CG_DATE_FORMAT)
+
+        return cls(
+            user=user,
+            cf_bm=cf_data.get('bm'),
+            cf_clearance=cf_data.get('clearance'),
+            cf_expires=cf_expires,
+            session_expires=session_expires,
+            session_token=data.get('token'),
+            user_agent=data.get('user_agent')
+        )
+
+    def to_json(self) -> dict[str, Any]:
+        """Dump data into a JSON representation."""
+        return {
+            'user': self.user.to_json() if self.user else {},
+            'cloudflare': {
+                'bm': self.cf_bm,
+                'clearance': self.cf_clearance,
+                'expires': self.cf_expires.strftime(CG_DATE_FORMAT) if self.cf_expires is not None else None
+            },
+            'expires': self.session_expires.strftime(CG_DATE_FORMAT) if self.session_expires is not None else None,
+            'token': self.session_token,
+            'user_agent': self.user_agent
         }

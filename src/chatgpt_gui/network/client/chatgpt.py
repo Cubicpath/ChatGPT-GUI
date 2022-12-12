@@ -29,6 +29,7 @@ from .auth import Authenticator
 from .structures import Action
 from .structures import Conversation
 from .structures import Message
+from .structures import Session
 from .structures import User
 
 
@@ -119,7 +120,6 @@ class Client(QObject):
             'Sec-Fetch-Site': 'same-site',
             'Sec-GPC': '1',
             'TE': 'trailers',
-            'User-Agent': CG_USER_AGENT,
             'X-OpenAI-Assistant-App-Id': '',
         })
 
@@ -416,12 +416,14 @@ class Client(QObject):
         self.authenticator.password = password
         self.authenticator.authenticate()
 
-    def new_session(self, session_token: str, *_) -> None:
+    def new_session(self, session: Session) -> None:
         """Call with new session token provided by authenticator.
 
-        :param session_token: New session token to use.
+        :param session: New session to use.
         """
-        self.session_token = session_token
+        if session.session_token:
+            self.session_token = session.session_token
+
         self.refresh_auth()
 
     def delete_cookie(self, name: str) -> None:
