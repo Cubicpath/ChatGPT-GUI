@@ -37,20 +37,24 @@ def current_requirement_licenses(
 
         name: str = dist.project_name.replace('-', '_')
         licenses: list[tuple[str, str]] = []
+        license_files: list[Path] = []
 
         # Find the distribution's information directory
-        info_path = Path(dist.location) / f'{name}-{dist.version}.dist-info'
-        if not info_path.is_dir():
-            if (egg_path := info_path.with_name(f'{name}.egg-info')).is_dir():
+        info_path: Path | None = None
+        if not (dist_path := Path(dist.location) / f'{name}-{dist.version}.dist-info').is_dir():
+            if (egg_path := dist_path.with_name(f'{name}.egg-info')).is_dir():
                 info_path = egg_path
+        else:
+            info_path = dist_path
 
         # Find the license file(s)
-        license_files: list[Path] = [
-            item for item in info_path.iterdir() if (
-                item.is_file() and any(keyword in item.name.lower() for keyword in
-                                       ('license', 'licence', 'copying', 'copyright', 'notice', 'author'))
-            )
-        ]
+        if info_path is not None:
+            license_files = [
+                item for item in info_path.iterdir() if (
+                    item.is_file() and any(keyword in item.name.lower() for keyword in
+                                           ('license', 'licence', 'copying', 'copyright', 'notice', 'author'))
+                )
+            ]
 
         # If the distribution has no 'License' field, get the distribution's Trove classifier
         if not (dist_license := metadata(name).get('License')):  # type: ignore
