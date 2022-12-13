@@ -75,6 +75,8 @@ under the `Tools` context menu
 ~~Thanks to [rawandahmad698] and [tls-client][python-tls-client], there exists a method to authenticate without
 messing around with tokens or the browser. Simply sign in from the app itself!.~~
 
+**Google Chrome is currently required to automatically bypass cloudflare.**
+
 Email & Password login is currently not working.
 Refer to session token authentication in the meantime.
 
