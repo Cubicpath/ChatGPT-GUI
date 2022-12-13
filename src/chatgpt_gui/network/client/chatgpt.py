@@ -395,6 +395,7 @@ class Client(QObject):
 
         :return: True if successful, else False.
         """
+        # If invalid session token, ask application for new session and return early.
         if not self.session_token or (
                 self.session_data.session_expires is not None and
                 self.session_data.session_expires < dt.datetime.now()
@@ -407,7 +408,12 @@ class Client(QObject):
 
             return False
 
-        if not self.session_data.cf_clearance:
+        # If invalid cloudflare clearance token, refresh it.
+        if not self.session_data.cf_clearance or (
+                self.session_data.cf_expires is not None and
+                self.session_data.cf_expires < dt.datetime.now()
+        ):
+            self.session_data.cf_expires = None
             self.authenticator.cloudflare_clearance()
 
         response = self._get('api/auth/session')

@@ -347,6 +347,7 @@ class Authenticator(QObject):
                             self.session_data.cf_bm = value
                         elif cookie_name == 'cf_clearance':
                             self.session_data.cf_clearance = value
+                            self.session_data.cf_expires = dt.datetime.now() + dt.timedelta(hours=1)
 
             if cookie_values:
                 clearance_obtained = True
