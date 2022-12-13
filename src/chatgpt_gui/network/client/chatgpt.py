@@ -57,9 +57,7 @@ class Client(QObject):
         super().__init__(parent)
         self.receivedMessage.connect(lambda msg, convo: print(f'Conversation: {convo.uuid} | {msg}'))
 
-        self.session_data: Session = Session()
         self.authenticator = Authenticator(self)
-        self.authenticator.session_data = self.session_data
         self.authenticator.authenticationSuccessful.connect(self.new_session)
         self.authenticator.updateCFAuth.connect(self._cf_auth_updated)
         self.authenticator.updateUserAgent.connect(self._user_agent_updated)
@@ -67,6 +65,7 @@ class Client(QObject):
         self.conversations: dict[UUID, Conversation] = {}
         self.host: str = 'chat.openai.com'
         self.models: list[str] | None = None
+        self.session_data: Session = Session()
 
         self._first_request: bool = True
         self._access_token: str | None = None
@@ -86,6 +85,8 @@ class Client(QObject):
                 self.session_data = Session.from_json(_session_data)
         else:
             self.session_data.session_token = _session_token
+
+        self.authenticator.session_data = self.session_data
 
         self.session: NetworkSession = NetworkSession(self)
         self.session.headers = CaseInsensitiveDict({
