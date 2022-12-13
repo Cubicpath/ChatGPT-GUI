@@ -76,7 +76,7 @@ under the `Tools` context menu
 messing around with tokens or the browser. Simply sign in from the app itself!.~~
 
 Email & Password login is currently not working.
-Refer to session token authentication (below picture) in the meantime.
+Refer to session token authentication in the meantime.
 
 ![Sign In](https://i.imgur.com/DabSYBhl.png)
 
