@@ -409,11 +409,7 @@ class Client(QObject):
             return False
 
         # If invalid cloudflare clearance token, refresh it.
-        if not self.session_data.cf_clearance or (
-                self.session_data.cf_expires is not None and
-                self.session_data.cf_expires < dt.datetime.now()
-        ):
-            self.session_data.cf_expires = None
+        if not self.session_data.is_valid_clearance():
             self.authenticator.cloudflare_clearance()
 
         response = self._get('api/auth/session')

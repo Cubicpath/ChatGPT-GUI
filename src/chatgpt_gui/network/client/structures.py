@@ -157,17 +157,6 @@ class Session:
     session_token: str | None = field(default=None)
     user_agent: str | None = field(default=None)
 
-    @property
-    def cf_timestamp(self) -> int:
-        """Cloudflare clearance timestamp, from epoch.
-
-        :raises ValueError: If the clearance token is None.
-        """
-        if self.cf_clearance is None:
-            raise ValueError('Cannot get timestamp from null clearance token.')
-
-        return int(self.cf_clearance.split('-')[-3])
-
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Session:
         """Load data from a JSON representation."""
@@ -204,6 +193,13 @@ class Session:
         self.session_expires = None
         self.session_token = None
         self.user_agent = None
+
+    def is_valid_clearance(self) -> bool:
+        """Whether the clearance token exists and is not expired."""
+        return bool(self.cf_clearance) and (
+            self.cf_expires is not None and
+            self.cf_expires >= dt.datetime.now()
+        )
 
     def to_json(self) -> dict[str, Any]:
         """Dump data into a JSON representation."""

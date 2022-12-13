@@ -111,7 +111,10 @@ class Authenticator(QObject):
         #     'Connection': 'keep-alive',
         # }).status_code != 200:
         #     raise RuntimeError('Could not get login page.')
-        self.cloudflare_clearance()
+
+        # If invalid cloudflare clearance token, refresh it.
+        if not self.session_data.is_valid_clearance():
+            self.cloudflare_clearance()
 
         # -----------------------------------------------------------------------------------------
         # Step 2:
