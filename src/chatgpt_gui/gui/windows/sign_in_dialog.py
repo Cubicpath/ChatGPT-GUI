@@ -12,6 +12,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
+from ..workers import SignIn
 from ...models import DeferredCallable
 from ...utils import init_layouts
 from ...utils import init_objects
@@ -31,6 +32,13 @@ class SignInDialog(QWidget):
         self._init_ui()
 
     def _init_ui(self) -> None:
+        def start_sign_in() -> None:
+            self.sign_in_button.setDisabled(True)
+            app().start_worker(SignIn(
+                self.username_input.text(),
+                self.password_input.text()
+            ))
+
         username_label = QLabel()
         password_label = QLabel()
         self.username_input = QLineEdit(self)
@@ -57,11 +65,7 @@ class SignInDialog(QWidget):
             },
 
             self.sign_in_button: {
-                'clicked': DeferredCallable(
-                    app().client.signin,
-                    self.username_input.text,
-                    self.password_input.text
-                ),
+                'clicked': start_sign_in,
             },
 
             self.set_username_button: {

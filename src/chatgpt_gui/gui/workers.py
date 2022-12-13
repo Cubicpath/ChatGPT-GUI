@@ -4,12 +4,16 @@
 """Implementations for worker-thread runnables."""
 from __future__ import annotations
 
-__all__ = ()
+__all__ = (
+    'SignIn',
+)
 
 from collections.abc import Callable
 
 from PySide6.QtCore import *
 from shiboken6 import Shiboken
+
+from .app import GetterApp
 
 
 class _SignalHolder(QObject):
@@ -50,7 +54,7 @@ class _Worker(QRunnable):
 
         :raises RuntimeError: If worker started before application instance is defined.
         """
-        if (app := QCoreApplication.instance()) is None:
+        if (app := GetterApp.instance()) is None:
             raise RuntimeError('Worker started before application instance is defined.')
 
         # No idea how, but this fixes application deadlock cause by RecursiveSearch (issue #31)
@@ -77,3 +81,16 @@ class _Worker(QRunnable):
         # Delete if not deleted
         if Shiboken.isValid(self.signals):
             self.signals.deleteLater()
+
+
+class SignIn(_Worker):
+    """Signs in to OpenAI with the application's client and the provided information."""
+
+    def __init__(self, username: str, password: str, **kwargs: Callable | Slot) -> None:
+        """Create a new :py:class:`SignIn` worker to use the given ``username`` and base ``password``."""
+        super().__init__(**kwargs)
+        self.username = username
+        self.password = password
+
+    def _run(self) -> None:
+        GetterApp.instance().client.sign_in(self.username, self.password)
