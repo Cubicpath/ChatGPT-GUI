@@ -149,13 +149,13 @@ class User:
 class Session:
     """OpenAI Session Data."""
 
-    user: User | None
-    cf_bm: str | None
-    cf_clearance: str | None
-    cf_expires: dt.datetime | None
-    session_expires: dt.datetime | None
-    session_token: str | None
-    user_agent: str | None
+    user: User | None = field(default=None)
+    cf_bm: str | None = field(default=None)
+    cf_clearance: str | None = field(default=None)
+    cf_expires: dt.datetime | None = field(default=None)
+    session_expires: dt.datetime | None = field(default=None)
+    session_token: str | None = field(default=None)
+    user_agent: str | None = field(default=None)
 
     @property
     def cf_timestamp(self) -> int:
@@ -174,7 +174,10 @@ class Session:
         cf_data: dict[str, Any] = data.get('cloudflare', {})
 
         if (user := data.get('user')) is not None:
-            user = User.from_json(user)
+            if not user:
+                user = None
+            else:
+                user = User.from_json(user)
 
         if (cf_expires := cf_data.get('expires')) is not None:
             cf_expires = dt.datetime.strptime(cf_expires, CG_DATE_FORMAT)  # type: ignore
@@ -191,6 +194,16 @@ class Session:
             session_token=data.get('token'),
             user_agent=data.get('user_agent')
         )
+
+    def clear(self) -> None:
+        """Clear data while keeping object reference."""
+        self.user = None
+        self.cf_bm = None
+        self.cf_clearance = None
+        self.cf_expires = None
+        self.session_expires = None
+        self.session_token = None
+        self.user_agent = None
 
     def to_json(self) -> dict[str, Any]:
         """Dump data into a JSON representation."""

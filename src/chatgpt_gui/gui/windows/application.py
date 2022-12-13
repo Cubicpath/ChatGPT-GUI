@@ -207,7 +207,7 @@ class AppWindow(Singleton, QMainWindow):
         After retrieving the pfp, cache it in memory.
         """
         # Reset to default icon
-        if (user := app().client.user) is None:
+        if (user := app().client.session_data.user) is None:
             self.account_action.setIcon(app().icon_store['account'])
             return
 

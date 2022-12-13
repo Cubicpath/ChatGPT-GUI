@@ -23,7 +23,7 @@ def confirm_sign_out() -> None:
 
     :raises ValueError: If user is None.
     """
-    if (user := app().client.user) is None:
+    if (user := app().client.session_data.user) is None:
         raise ValueError('Cannot sign out from a null User.')
 
     confirmation: bool = app().show_dialog(
@@ -50,7 +50,7 @@ class AccountContextMenu(QMenu):
                 'font': QFont('segoe ui', 9),
                 'text': tr(
                     'gui.menus.account.signed_in_as',
-                    user.email if (user := app().client.user) is not None else None
+                    user.email if (user := app().client.session_data.user) is not None else None
                 ),
             },
 
@@ -59,13 +59,13 @@ class AccountContextMenu(QMenu):
             },
 
             (sign_in := QAction(self)): {
-                'disabled': app().client.user is not None,
+                'disabled': app().client.session_data.user is not None,
                 'text': tr('gui.menus.account.sign_in'),
                 'triggered': app().windows['sign_in'].show
             },
 
             (sign_out := QAction(self)): {
-                'disabled': app().client.user is None,
+                'disabled': app().client.session_data.user is None,
                 'text': tr('gui.menus.account.sign_out'),
                 'triggered': confirm_sign_out
             },
@@ -76,7 +76,7 @@ class AccountContextMenu(QMenu):
             'Sign Out', sign_out
         ]
 
-        if app().client.user is not None:
+        if app().client.session_data.user is not None:
             menu_items.insert(0, 'Account Information')
             menu_items.insert(1, email_action)
 

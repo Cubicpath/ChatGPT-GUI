@@ -59,51 +59,32 @@ class Client(QObject):
 
         self.authenticator = Authenticator(self)
         self.authenticator.authenticationSuccessful.connect(self.new_session)
+        self.authenticator.updateCFAuth.connect(self._cf_auth_updated)
+        self.authenticator.updateUserAgent.connect(self._user_agent_updated)
 
         self.conversations: dict[UUID, Conversation] = {}
         self.host: str = 'chat.openai.com'
         self.models: list[str] | None = None
-        self.user: User | None = None
 
-        self._session_expire: dt.datetime | None = None
+        self.session_data: Session = Session()
         self._first_request: bool = True
         self._access_token: str | None = None
 
         # Load session token
-        self._session_token: str | None = kwargs.pop('session_token', os.getenv('CHATGPT_SESSION_AUTH', None))
-        if self._session_token is None and (CG_SESSION_PATH.is_file() or CG_SESSION_PATH_OLD.is_file()):
-            # Read from file if value was not provided by kwarg or ENV
-            # Migrate old format to new format.
-            if CG_SESSION_PATH_OLD.is_file():
-                hide_windows_file(CG_SESSION_PATH_OLD, unhide=True)
-
-                # Read old token and dump in new format
-                _token_old = CG_SESSION_PATH_OLD.read_text(encoding='utf8')
-                CG_SESSION_PATH.write_text(json.dumps({
-                    'user': {},
-                    'expires': None,
-                    'token': _token_old
-                }, indent=2), encoding='utf8')
-
-                # Delete old file and mark new file as hidden
-                CG_SESSION_PATH_OLD.unlink()
-                hide_windows_file(CG_SESSION_PATH)
+        _session_token: str | None = kwargs.pop('session_token', os.getenv('CHATGPT_SESSION_AUTH', None))
+        if _session_token is None and (CG_SESSION_PATH.is_file() or CG_SESSION_PATH_OLD.is_file()):
+            self._migrate_session_format()
 
             try:
+                # Attempt to read session data
                 _session_data: dict[str, Any] = json.loads(CG_SESSION_PATH.read_text(encoding='utf8'))
-
             except JSONDecodeError:
-                # Delete session file if invalid json.
+                # Delete session file if invalid json
                 CG_SESSION_PATH.unlink()
-
             else:
-                if user := _session_data.get('user'):
-                    self.user = User.from_json(user)
-
-                if expires := _session_data.get('expires'):
-                    self._session_expire = dt.datetime.strptime(expires, _DATE_FORMAT)
-
-                self._session_token = _session_data['token']
+                self.session_data = Session.from_json(_session_data)
+        else:
+            self.session_data.session_token = _session_token
 
         self.session: NetworkSession = NetworkSession(self)
         self.session.headers = CaseInsensitiveDict({
@@ -125,6 +106,9 @@ class Client(QObject):
 
         if self.session_token:
             self.set_cookie('__Secure-next-auth.session-token', self.session_token)
+
+        if self.session_data.user_agent:
+            self.session.headers['User-Agent'] = self.session_data.user_agent
 
     @property
     def api_root(self) -> str:
@@ -230,33 +214,35 @@ class Client(QObject):
     @property
     def session_token(self) -> str | None:
         """Bearer token to authenticate self to API endpoints."""
-        return self._session_token
+        return self.session_data.session_token
 
     @session_token.setter
     def session_token(self, value: str) -> None:
         value = decode_url(value)
 
-        self._session_token = value.strip()
+        self.session_data.session_token = value.strip()
         self.set_cookie('__Secure-next-auth.session-token', value)
-
-        hide_windows_file(CG_SESSION_PATH, unhide=True)
-        CG_SESSION_PATH.write_text(json.dumps({
-            'user': self.user.to_json() if self.user is not None else {},
-            'expires': self._session_expire.strftime(_DATE_FORMAT) if self._session_expire is not None else None,
-            'token': self._session_token
-        }, indent=2), encoding='utf8')
-        hide_windows_file(CG_SESSION_PATH)
+        self.save_session_data()
 
     @session_token.deleter
     def session_token(self) -> None:
-        self._session_token = None
-        self._session_expire = None
-        self.user = None
+        self.session_data.clear()
         self.delete_cookie('__Secure-next-auth.session-token')
         if CG_SESSION_PATH.is_file():
             CG_SESSION_PATH.unlink()
 
         self.signedOut.emit()
+
+    def _cf_auth_updated(self, cookies: dict[str, str]):
+        for name, value in cookies.items():
+            self.set_cookie(name, value)
+
+        if cookies:
+            self.save_session_data()
+
+    def _user_agent_updated(self, user_agent: str):
+        self.session.headers['User-Agent'] = user_agent
+        self.save_session_data()
 
     def _get(self, path: str, update_auth_on_401: bool = True, **kwargs) -> Response:
         """Get a :py:class:`Response` from ChatGPT.
@@ -282,6 +268,24 @@ class Client(QObject):
                     response = self._get(path, False, **kwargs)
 
         return response
+
+    @staticmethod
+    def _migrate_session_format() -> None:
+        # Read from file if value was not provided by kwarg or ENV
+        # Migrate old format to new format.
+        if CG_SESSION_PATH_OLD.is_file():
+            # Read old token and dump in new format
+            hide_windows_file(CG_SESSION_PATH_OLD, unhide=True)
+            _token_old = CG_SESSION_PATH_OLD.read_text(encoding='utf8')
+            CG_SESSION_PATH.write_text(json.dumps({
+                'user': {},
+                'expires': None,
+                'token': _token_old
+            }, indent=2), encoding='utf8')
+
+            # Delete old file and mark new file as hidden
+            CG_SESSION_PATH_OLD.unlink()
+            hide_windows_file(CG_SESSION_PATH)
 
     def get_models(self) -> list[dict[str, Any]] | None:
         """Get the list of models to use with ChatGPT.
@@ -309,6 +313,12 @@ class Client(QObject):
             raise ValueError(f'Couldn\'t get image for {url} at {response.url}. Error {response.code}')
 
         return response.data
+
+    def save_session_data(self) -> None:
+        """Dump the session data to its config file."""
+        hide_windows_file(CG_SESSION_PATH, unhide=True)
+        CG_SESSION_PATH.write_text(json.dumps(self.session_data.to_json(), indent=2), encoding='utf8')
+        hide_windows_file(CG_SESSION_PATH)
 
     def send_message(self, message_text: str, conversation: Conversation) -> None:
         """Send a message and emit the AI's response through `the `receivedMessage`` signal.
@@ -377,7 +387,10 @@ class Client(QObject):
 
         :return: True if successful, else False.
         """
-        if not self.session_token or (self._session_expire is not None and self._session_expire < dt.datetime.now()):
+        if not self.session_token or (
+                self.session_data.session_expires is not None and
+                self.session_data.session_expires < dt.datetime.now()
+        ):
             self.authenticationRequired.emit()
 
             # Delete expired session
@@ -393,20 +406,20 @@ class Client(QObject):
             self.session.headers['If-None-Match'] = etag
 
         if user := response.json.get('user'):
-            self.user = User.from_json(user)
+            self.session_data.user = User.from_json(user)
 
         if access_token := response.json.get('accessToken'):
             self.access_token = access_token
 
         if session_expire := response.json.get('expires'):
-            self._session_expire = dt.datetime.strptime(session_expire, _DATE_FORMAT)
+            self.session_data.session_expires = dt.datetime.strptime(session_expire, _DATE_FORMAT)
 
         if session_token := self.session.cookies.get('__Secure-next-auth.session-token'):
             self.session_token = session_token
 
         return True
 
-    def signin(self, username: str, password: str) -> None:
+    def sign_in(self, username: str, password: str) -> None:
         """Signin to OpenAI using the specified username and password.
 
         :param username: Username to signin to (email address).
@@ -414,6 +427,7 @@ class Client(QObject):
         """
         self.authenticator.username = username
         self.authenticator.password = password
+        self.authenticator.session_data = self.session_data
         self.authenticator.authenticate()
 
     def new_session(self, session: Session) -> None:
@@ -421,8 +435,7 @@ class Client(QObject):
 
         :param session: New session to use.
         """
-        if session.session_token:
-            self.session_token = session.session_token
+        self.session_data = session
 
         self.refresh_auth()
 
