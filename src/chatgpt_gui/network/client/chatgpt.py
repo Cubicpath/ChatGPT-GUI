@@ -91,7 +91,7 @@ class Client(QObject):
         self.session: NetworkSession = NetworkSession(self)
         self.session.headers = CaseInsensitiveDict({
             'Accept': '*/*',
-            'Accept-Encoding': ', '.join(('gzip', 'deflate', 'br')),
+            # 'Accept-Encoding': ', '.join(('gzip', 'deflate', 'br')),
             'Accept-Language': 'en-US,en;q=0.5',
             'Connection': 'keep-alive',
             'DNT': '1',
@@ -265,6 +265,11 @@ class Client(QObject):
             self.refresh_auth()
 
         response: Response = self.session.get(self.api_root + path.strip(), wait_until_finished=True, **kwargs)
+        print(response, response.url)
+        print(response.data)
+        print(response.headers)
+        print(self.session.headers)
+        print(self.session.cookies)
 
         if session_token := self.session.cookies.get('__Secure-next-auth.session-token'):
             self.session_token = session_token
