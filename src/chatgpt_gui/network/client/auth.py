@@ -26,6 +26,7 @@ from tls_client import Session as TlsSession
 from undetected_chromedriver import Chrome
 from undetected_chromedriver import ChromeOptions
 
+from ...constants import *
 from .structures import Session
 from .structures import User
 
@@ -293,7 +294,7 @@ class Authenticator(QObject):
         self.session_data.cf_bm = self.session.cookies.get('__cf_bm')
         self.session_data.cf_clearance = self.session.cookies.get('cf_clearance')
         self.session_data.cf_expires = dt.datetime.now() + dt.timedelta(hours=1)
-        self.session_data.session_expires = response.json()['expires']
+        self.session_data.session_expires = dt.datetime.strptime(response.json()['expires'], CG_DATE_FORMAT)
         self.session_data.session_token = session_token
 
         self.authenticationSuccessful.emit(self.session_data)
