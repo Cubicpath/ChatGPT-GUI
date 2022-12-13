@@ -321,7 +321,10 @@ class Authenticator(QObject):
             self.authenticationFailed.emit(self.username, e)
 
     def cloudflare_clearance(self) -> None:
-        """Set cf_clearance cookie and associated user agent."""
+        """Set cf_clearance cookie and associated user agent.
+
+        :raises RuntimeError: If the Chrome webdriver failed to start.
+        """
         clearance_obtained: bool = False
 
         def set_cookies(message: dict[str, Any]) -> None:
@@ -370,7 +373,11 @@ class Authenticator(QObject):
         ):
             options.add_argument(argument)
 
-        driver = Chrome(enable_cdp_events=True, options=options)
+        try:
+            driver = Chrome(enable_cdp_events=True, options=options)
+        except Exception as e:
+            raise RuntimeError('Couldn\'t start Chrome webdriver. Make sure you have Google Chrome installed.') from e
+
         driver.add_cdp_listener('Network.responseReceivedExtraInfo', set_cookies)
         if not self.session_data.user_agent:
             driver.add_cdp_listener('Network.requestWillBeSentExtraInfo', set_user_agent)

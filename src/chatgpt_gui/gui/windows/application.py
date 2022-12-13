@@ -244,7 +244,7 @@ class AppWindow(Singleton, QMainWindow):
         if not app().client.session_token:
             app().client.authenticationRequired.emit()
 
-        self.update_user_icon()
+        QTimer(self).singleShot(200, self.update_user_icon)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Close all detached/children windows and quit application."""
