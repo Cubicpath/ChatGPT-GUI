@@ -8,6 +8,9 @@ PySide6-Essentials == 6.4.1
 # Cloudflare bypass
 undetected-chromedriver == 3.1.7
 
+# auth0 TLS Fingerprinting bypasser
+tls-client == 0.1.5
+
 # HTML parser
 beautifulsoup4 == 4.11.1
     soupsieve == 2.3.2.post1
