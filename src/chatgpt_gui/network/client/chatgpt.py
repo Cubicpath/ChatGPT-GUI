@@ -107,6 +107,12 @@ class Client(QObject):
         if self.session_token:
             self.set_cookie('__Secure-next-auth.session-token', self.session_token)
 
+        if self.session_data.cf_bm:
+            self.set_cookie('__cf_bm', self.session_data.cf_bm)
+
+        if self.session_data.cf_clearance:
+            self.set_cookie('cf_clearance', self.session_data.cf_clearance)
+
         if self.session_data.user_agent:
             self.session.headers['User-Agent'] = self.session_data.user_agent
 
@@ -405,17 +411,23 @@ class Client(QObject):
         if etag := response.headers.get('ETag'):
             self.session.headers['If-None-Match'] = etag
 
+        if cf_bm := self.session.cookies.get('__cf_bm'):
+            self.session_data.cf_bm = cf_bm
+
+        if cf_clearance := self.session.cookies.get('cf_clearance'):
+            self.session_data.cf_clearance = cf_clearance
+
         if user := response.json.get('user'):
             self.session_data.user = User.from_json(user)
-
-        if access_token := response.json.get('accessToken'):
-            self.access_token = access_token
 
         if session_expire := response.json.get('expires'):
             self.session_data.session_expires = dt.datetime.strptime(session_expire, _DATE_FORMAT)
 
         if session_token := self.session.cookies.get('__Secure-next-auth.session-token'):
             self.session_token = session_token
+
+        if access_token := response.json.get('accessToken'):
+            self.access_token = access_token
 
         return True
 

@@ -325,24 +325,24 @@ class Authenticator(QObject):
 
             cookies_to_update: dict[str, str] = {}
 
-            for cookie_name in ('cf_clearance',):
+            for cookie_name in ('__cf_bm', 'cf_clearance',):
                 # Use regex to get the cookies
                 pattern = re.compile(f'{cookie_name}=.*?;')
                 if match := pattern.match(set_cookie_header):
                     # remove the semicolon and name from the string
-                    value = match.group(0).split('=')[-1]
-                    cookies_to_update[cookie_name] = value
+                    if value := match.group(0).split('=')[-1][:-1]:
+                        cookies_to_update[cookie_name] = value
 
-                    self.session.cookies.set(
-                        name=cookie_name,
-                        value=value,
-                        domain='.chat.openai.com'
-                    )
+                        self.session.cookies.set(
+                            name=cookie_name,
+                            value=value,
+                            domain='.chat.openai.com'
+                        )
 
-                    if cookie_name == '__cf_bm':
-                        self.session_data.cf_bm = value
-                    elif cookie_name == 'cf_clearance':
-                        self.session_data.cf_clearance = value
+                        if cookie_name == '__cf_bm':
+                            self.session_data.cf_bm = value
+                        elif cookie_name == 'cf_clearance':
+                            self.session_data.cf_clearance = value
 
             # Update session_data
             if cookies_to_update:
