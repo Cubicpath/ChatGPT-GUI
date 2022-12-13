@@ -318,12 +318,15 @@ class Authenticator(QObject):
 
     def cloudflare_clearance(self) -> None:
         """Set cf_clearance cookie and associated user agent."""
+        clearance_obtained: bool = False
 
         def set_cookies(message: dict[str, Any]) -> None:
+            nonlocal clearance_obtained
+
             if not (set_cookie_header := message.get('params', {}).get('headers', {}).get('set-cookie')):
                 return
 
-            cookies_to_update: dict[str, str] = {}
+            cookie_values: dict[str, str] = {}
 
             for cookie_name in ('__cf_bm', 'cf_clearance',):
                 # Use regex to get the cookies
@@ -331,7 +334,7 @@ class Authenticator(QObject):
                 if match := pattern.match(set_cookie_header):
                     # remove the semicolon and name from the string
                     if value := match.group(0).split('=')[-1][:-1]:
-                        cookies_to_update[cookie_name] = value
+                        cookie_values[cookie_name] = value
 
                         self.session.cookies.set(
                             name=cookie_name,
@@ -344,9 +347,9 @@ class Authenticator(QObject):
                         elif cookie_name == 'cf_clearance':
                             self.session_data.cf_clearance = value
 
-            # Update session_data
-            if cookies_to_update:
-                self.updateCFAuth.emit(cookies_to_update)
+            if cookie_values:
+                clearance_obtained = True
+                self.updateCFAuth.emit(cookie_values)
 
         def set_user_agent(message: dict[str, Any]) -> None:
             ua = self.session_data.user_agent = message.get('params', {}).get('headers', {}).get('user-agent')
@@ -369,7 +372,7 @@ class Authenticator(QObject):
 
         driver.get('https://chat.openai.com/chat')
 
-        while not self.session_data.user_agent or not self.session_data.cf_clearance:
+        while not self.session_data.user_agent or not clearance_obtained:
             QCoreApplication.processEvents()
 
         driver.close()

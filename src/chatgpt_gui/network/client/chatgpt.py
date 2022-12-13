@@ -57,7 +57,9 @@ class Client(QObject):
         super().__init__(parent)
         self.receivedMessage.connect(lambda msg, convo: print(f'Conversation: {convo.uuid} | {msg}'))
 
+        self.session_data: Session = Session()
         self.authenticator = Authenticator(self)
+        self.authenticator.session_data = self.session_data
         self.authenticator.authenticationSuccessful.connect(self.new_session)
         self.authenticator.updateCFAuth.connect(self._cf_auth_updated)
         self.authenticator.updateUserAgent.connect(self._user_agent_updated)
@@ -66,7 +68,6 @@ class Client(QObject):
         self.host: str = 'chat.openai.com'
         self.models: list[str] | None = None
 
-        self.session_data: Session = Session()
         self._first_request: bool = True
         self._access_token: str | None = None
 
@@ -405,6 +406,9 @@ class Client(QObject):
 
             return False
 
+        if not self.session_data.cf_clearance:
+            self.authenticator.cloudflare_clearance()
+
         response = self._get('api/auth/session')
 
         # Ignore next refresh if it has the same value
@@ -439,7 +443,6 @@ class Client(QObject):
         """
         self.authenticator.username = username
         self.authenticator.password = password
-        self.authenticator.session_data = self.session_data
         self.authenticator.authenticate()
 
     def new_session(self, session: Session) -> None:
