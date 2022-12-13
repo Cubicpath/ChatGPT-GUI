@@ -6,9 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [Unreleased]
 ### Added
+- Automatic `cf_clearance` and `__cf_bm` support
 - Proxy settings
   - This includes `host`, `port`, `username`, `password`
   - Supported proxy protocols are `HTTP` and `SOCKS5`
+
+### Removed
+- Email & Password login is currently not working.
+  Refer to the guide for session token authentication in the meantime.
 
 
 ## [0.3.3] - 2022-12-9 [PyPI](https://pypi.org/project/chatgpt-gui/0.3.3)
