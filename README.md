@@ -24,6 +24,7 @@ An unofficial GUI app for ChatGPT.
 - [How to Use](#how-to-use)
      - [Installation](#installation)
      - [Authentication](#authentication)
+          - [Session Token Guide](#session-token-guide)
           - [Session Data](#session-data)
      - [Themes](#themes)
           - [Theme File Structure](#theme-file-structure)
@@ -83,7 +84,7 @@ Refer to session token authentication in the meantime.
 
 ![Sign In](https://i.imgur.com/DabSYBhl.png)
 
-If you want to use session tokens anyway, here is the guide:
+#### Session Token Guide:
 - Sign in to [ChatGPT] on your browser
 - Navigate to the Cookies for chat.openai.com
   - On Firefox -- F12 > Move to the "Storage" tab > Under "Cookies" select https://chat.openai.com
