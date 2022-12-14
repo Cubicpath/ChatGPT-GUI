@@ -99,22 +99,22 @@ If you ever need to directly edit your session data, it follows the following fo
 ```json
 {
   "user": {
-    "id": Your user id (starting with a "user-" prefix),
-    "name": Your username (usually same as your email),
-    "email": The email tied to your session,
-    "image": Link to your profiles image (usually same as your picture),
-    "picture": Link to your profile picture,
+    "id": "Your user id (starting with a 'user-' prefix)"
+    "name": "Your username (usually same as your email)"
+    "email": "The email tied to your session",
+    "image": "Link to your profiles image (usually same as your picture)",
+    "picture": "Link to your profile picture",
     "groups": [],
     "features": []
   },
   "cloudflare": {
-    "bm": Value of the __cf_bm cookie,
-    "clearance": Value of the cf_clearance cookie,
-    "expires": 1h from the time cf_clearance is acquired
+    "bm": "Value of the __cf_bm cookie",
+    "clearance": "Value of the cf_clearance cookie",
+    "expires": "1h from the time cf_clearance is acquired"
   },
-  "expires": Automatically acquired after refresh_auth(),
-  "token": Value of the __Secure-next-auth.session-token cookie,
-  "user_agent": User Agent the Client/Authenticator use
+  "expires": "Automatically acquired after refresh_auth()",
+  "token": "Value of the __Secure-next-auth.session-token cookie",
+  "user_agent": "User Agent the Client/Authenticator use"
 }
 ```
 
