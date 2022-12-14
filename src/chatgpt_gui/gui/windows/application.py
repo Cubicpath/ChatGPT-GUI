@@ -26,7 +26,7 @@ from ..aliases import app
 from ..menus import AccountContextMenu
 from ..menus import HelpContextMenu
 from ..menus import ToolsContextMenu
-from ..widgets import ConversationView
+from ..widgets import ConversationTabs
 from ..widgets import ExceptionLogger
 
 
@@ -55,7 +55,6 @@ class AppWindow(Singleton, QMainWindow):
         super().__init__()
 
         self.resize(size)
-        self.conversation_counter: int = 0
 
         app().client.authenticator.authenticationSuccessful.connect(DeferredCallable(self.update_user_icon))
         app().client.signedOut.connect(self.update_user_icon)
@@ -150,42 +149,13 @@ class AppWindow(Singleton, QMainWindow):
     # noinspection PyTypeChecker
     def _init_ui(self) -> None:
         """Initialize the UI, including Layouts and widgets."""
-        def add_conversation():
-            self.conversation_counter += 1
-            self.conversation_tabs.addTab(ConversationView(), f'Conversation {self.conversation_counter}')
-
-        def remove_conversation(index: int):
-            view: ConversationView = self.conversation_tabs.widget(index)  # type: ignore
-            view.deleteLater()
-
-            self.conversation_tabs.removeTab(index)
-            if not self.conversation_tabs.count():
-                self.conversation_counter = 0
-                add_conversation()
-
         # Define widget attributes
         # Cannot be defined in init_objects() as walrus operators are not allowed for object attribute assignment.
         # This works in the standard AST, but is a seemingly arbitrary limitation set by the interpreter.
         # See:
         # https://stackoverflow.com/questions/64055314/why-cant-pythons-walrus-operator-be-used-to-set-instance-attributes#answer-66617839
-        self.conversation_tabs = QTabWidget(self)
-
-        init_objects({
-            self.conversation_tabs: {
-                'tabsClosable': True,
-                'tabCloseRequested': remove_conversation
-            },
-
-            (add_conversation_button := QPushButton(self.conversation_tabs)): {
-                'size': {'fixed': (None, 26)},
-                'icon': app().icon_store['add'],
-                'clicked': add_conversation
-            }
-
-        })
-
-        add_conversation()
-        self.conversation_tabs.setCornerWidget(add_conversation_button, Qt.Corner.TopLeftCorner)
+        self.conversation_tabs = ConversationTabs(self)
+        self.conversation_tabs.add_conversation()
 
         init_layouts({
             # Main layout

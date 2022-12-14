@@ -9,6 +9,7 @@ __all__ = (
     'AppWindow',
     'CaptchaDialog',
     'ComboBox',
+    'ConversationTabs',
     'ConversationView',
     'ExceptionLogger',
     'ExceptionReporter',
@@ -35,6 +36,7 @@ from .menus import AccountContextMenu
 from .menus import HelpContextMenu
 from .menus import ToolsContextMenu
 from .widgets import ComboBox
+from .widgets import ConversationTabs
 from .widgets import ConversationView
 from .widgets import ExceptionLogger
 from .widgets import ExternalTextBrowser
