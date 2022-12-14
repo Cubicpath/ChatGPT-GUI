@@ -241,9 +241,6 @@ class AppWindow(Singleton, QMainWindow):
             app().windows['readme_viewer'].show()
             app().show_dialog('information.first_launch', self)
 
-        if not app().client.session_token:
-            app().client.authenticationRequired.emit()
-
         QTimer(self).singleShot(200, self.update_user_icon)
 
     def closeEvent(self, event: QCloseEvent) -> None:

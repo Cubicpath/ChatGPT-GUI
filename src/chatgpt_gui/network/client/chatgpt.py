@@ -33,9 +33,6 @@ from .structures import Session
 from .structures import User
 
 
-_DATE_FORMAT: str = '%Y-%m-%dT%H:%M:%S.%fZ'
-
-
 class Client(QObject):
     """Asynchronous HTTP REST Client that interfaces with ChatGPT."""
 
@@ -274,6 +271,9 @@ class Client(QObject):
             if response.code == 401 and update_auth_on_401 and self.access_token is not None:
                 if self.refresh_auth():
                     response = self._get(path, False, **kwargs)
+                    if response.code == 401:
+                        # Refresh auth failed, ask user to re-authenticate.
+                        self.authenticationRequired.emit()
 
         return response
 
@@ -339,7 +339,7 @@ class Client(QObject):
         """
         if not self.models:
             if not (models := self.get_models()):
-                raise ValueError('Couldn\'t get model data from ChatGPT. Check to make sure you\'re authenticated.')
+                raise ValueError('Couldn\'t get model data from ChatGPT. Check to make sure the session is valid.')
             self.models = [model['slug'] for model in models]
 
         if conversation.messages:
@@ -428,7 +428,7 @@ class Client(QObject):
             self.session_data.user = User.from_json(user)
 
         if session_expire := response.json.get('expires'):
-            self.session_data.session_expires = dt.datetime.strptime(session_expire, _DATE_FORMAT)
+            self.session_data.session_expires = dt.datetime.strptime(session_expire, CG_DATE_FORMAT)
 
         if session_token := self.session.cookies.get('__Secure-next-auth.session-token'):
             self.session_token = session_token
