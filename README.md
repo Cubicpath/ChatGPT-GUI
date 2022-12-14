@@ -24,6 +24,7 @@ An unofficial GUI app for ChatGPT.
 - [How to Use](#how-to-use)
      - [Installation](#installation)
      - [Authentication](#authentication)
+          - [Session Data](#session-data)
      - [Themes](#themes)
           - [Theme File Structure](#theme-file-structure)
 
@@ -89,6 +90,33 @@ If you want to use session tokens anyway, here is the guide:
 - Double-click the `__Secure-next-auth.session-token` cookie value and copy with CTRL + C
 - Open the Settings window, unlock the input by pressing the "Edit Session Token" button, then paste the copied value.
 - Press the Set button, and you should now be authenticated!
+
+#### Session Data:
+Session data is stored in a hidden file (~/.config/chatgpt_gui/.session.json), for persistence.
+When you sign out or clear your session token, it automatically deletes all session data.
+
+If you ever need to directly edit your session data, it follows the following format:
+```json
+{
+  "user": {
+    "id": Your user id (starting with a "user-" prefix),
+    "name": Your username (usually same as your email),
+    "email": The email tied to your session,
+    "image": Link to your profiles image (usually same as your picture),
+    "picture": Link to your profile picture,
+    "groups": [],
+    "features": []
+  },
+  "cloudflare": {
+    "bm": Value of the __cf_bm cookie,
+    "clearance": Value of the cf_clearance cookie,
+    "expires": 1h from the time cf_clearance is acquired
+  },
+  "expires": Automatically acquired after refresh_auth(),
+  "token": Value of the __Secure-next-auth.session-token cookie,
+  "user_agent": User Agent the Client/Authenticator use
+}
+```
 
 ### Themes:
 Themes are a way to style already-existing elements (Think CSS). They are held in a directory with their resources
