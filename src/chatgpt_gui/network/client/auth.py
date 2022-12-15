@@ -22,6 +22,9 @@ import datetime as dt
 from bs4 import BeautifulSoup
 from PySide6.QtCore import *
 from PySide6.QtGui import *
+from selenium.webdriver import DesiredCapabilities
+from selenium.webdriver.common.proxy import Proxy
+from selenium.webdriver.common.proxy import ProxyType
 from tls_client import Session as TlsSession
 from undetected_chromedriver import Chrome
 from undetected_chromedriver import ChromeOptions
@@ -365,6 +368,22 @@ class Authenticator(QObject):
                 self.updateUserAgent.emit(ua)
 
         options = ChromeOptions()
+        if self.session.proxies:
+            proxy = Proxy()
+            proxy.proxy_type = ProxyType.MANUAL
+            if http := self.session.proxies.get('http'):
+                if (match := CG_PROXY_PATTERN.match(http)) is not None:
+                    config: dict[str, str] = match.groupdict()
+                    proxy.http_proxy = f'{config["host"]}:{config["port"]}'
+            if socks := self.session.proxies.get('socks5'):
+                if (match := CG_PROXY_PATTERN.match(socks)) is not None:
+                    config: dict[str, str] = match.groupdict()
+                    proxy.socks_proxy = f'{config["host"]}:{config["port"]}'
+                    proxy.socks_username = config['username']
+                    proxy.socks_password = config['password']
+            proxy.add_to_capabilities(DesiredCapabilities.CHROME)
+            options.proxy = proxy
+
         for argument in (
                 '--disable-extensions', '--disable-application-cache',
                 '--disable-gpu', '--no-sandbox',
