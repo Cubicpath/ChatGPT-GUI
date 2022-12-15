@@ -11,6 +11,7 @@ __all__ = (
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
+from ...models import DistributedCallable
 from ...network.client import Conversation
 from ...network.client import Message
 from ...utils import init_layouts
@@ -29,6 +30,7 @@ class ConversationView(QFrame):
         super().__init__(*args, **kwargs)
         self.conversation = conversation if conversation is not None else Conversation()
 
+        self.is_waiting: bool = False
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -111,6 +113,10 @@ class ConversationView(QFrame):
         self.output.setPlaceholderText(tr('gui.output_text.placeholder'))
 
         app().client.receivedMessage.connect(self.receive_message)
+        app().client.receivedError.connect(DistributedCallable((
+            lambda _: setattr(self, 'is_waiting', False),
+            lambda _: self.send_button.setDisabled(False)
+        )))
 
     def append_to_view(self, text: str) -> None:
         """Append some new text to the output.
@@ -128,13 +134,15 @@ class ConversationView(QFrame):
 
         Clears the input and disables after sending.
         """
-        message: str = self.input_line.text() or self.input_multi.toPlainText()
-        self.input_line.clear()
-        self.input_multi.clear()
-        self.send_button.setDisabled(True)
-        self.append_to_view(tr('gui.output_text.you_prompt', message, key_eval=False))  # type: ignore
+        if not self.is_waiting:
+            message: str = self.input_line.text() or self.input_multi.toPlainText()
+            self.input_line.clear()
+            self.input_multi.clear()
+            self.is_waiting = True
+            self.send_button.setDisabled(True)
+            self.append_to_view(tr('gui.output_text.you_prompt', message, key_eval=False))  # type: ignore
 
-        app().client.send_message(message, self.conversation)  # type: ignore
+            app().client.send_message(message, self.conversation)  # type: ignore
 
     def receive_message(self, message: Message, conversation: Conversation) -> None:
         """Receive a response from the client.
@@ -143,5 +151,6 @@ class ConversationView(QFrame):
         :param conversation: Conversation received in.
         """
         if conversation is self.conversation:
+            self.is_waiting = False
             self.send_button.setDisabled(False)
             self.append_to_view(tr('gui.output_text.ai_prompt', message.text, key_eval=False))

@@ -28,6 +28,8 @@
     "warnings.empty_token.title": "No Session",
     "errors.authentication_failed.description": "Failed to login to <b>%s</b>.<br><br>Error: %s",
     "errors.authentication_failed.title": "Authentication Failed",
+    "errors.client_http_error.description": "Error %i: %s",
+    "errors.client_http_error.title": "Client HTTP Error: %s",
     "errors.missing_package.cancel": "Cancel",
     "errors.missing_package.description": "The action \"%s\" requires the \"{0}\" package, which is not currently installed.\n\nPressing \"{errors.missing_package.install}\" will install it using the following command:\n\n\"%s -m pip install {0}\"",
     "errors.missing_package.install": "Install",
@@ -85,6 +87,8 @@
     "gui.menus.account.sign_in": "Sign In...",
     "gui.menus.account.sign_out": "Sign Out...",
     "gui.menus.account.signed_in_as": "       Signed-in as: %s",
+    "gui.menus.conversations.import": "Import Conversation From...",
+    "gui.menus.conversations.export": "Export Conversation To...",
     "gui.menus.help": "Help",
     "gui.menus.help.about": "About",
     "gui.menus.help.about_qt": "About Qt",
@@ -129,6 +133,7 @@
     "network.http.codes.403.description": "Request forbidden -- You cannot get this resource with or without an access token.",
     "network.http.codes.404.description": "No resource found at the given location.",
     "network.http.codes.405.description": "Invalid method -- GET requests are not accepted for this resource.",
-    "network.http.codes.406.description": "Client does not support the given resource format."
+    "network.http.codes.406.description": "Client does not support the given resource format.",
+    "network.http.codes.429.description": "You have sent too many requests, and have been rate limited by OpenAI."
   }
 }
