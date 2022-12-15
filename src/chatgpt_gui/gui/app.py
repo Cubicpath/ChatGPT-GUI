@@ -225,6 +225,11 @@ class GetterApp(Singleton, QApplication):
         self.updateTranslations.connect(self._registered_translations)
         self.updateTranslations.connect(self._translate_http_code_map)
 
+        self.client.receivedError.connect(
+            lambda code: self.show_dialog('errors.client_http_error',
+                                          title_args=(http_code_map[code][0],),
+                                          description_args=(code, http_code_map[code][1])))
+
         self.client.authenticationRequired.connect(
             lambda: self.show_dialog('warnings.empty_token'))
 

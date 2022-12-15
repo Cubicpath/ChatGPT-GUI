@@ -211,7 +211,10 @@ class AppWindow(Singleton, QMainWindow):
             app().windows['readme_viewer'].show()
             app().show_dialog('information.first_launch', self)
 
-        QTimer(self).singleShot(200, self.update_user_icon)
+        if app().client.session_token:
+            QTimer(self).singleShot(200, self.update_user_icon)
+        else:
+            app().client.authenticationRequired.emit()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Close all detached/children windows and quit application."""

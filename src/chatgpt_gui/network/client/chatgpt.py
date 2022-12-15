@@ -37,6 +37,7 @@ class Client(QObject):
     """Asynchronous HTTP REST Client that interfaces with ChatGPT."""
 
     authenticationRequired = Signal()
+    receivedError = Signal(int)
     receivedMessage = Signal(Message, Conversation)
     signedOut = Signal()
 
@@ -274,6 +275,8 @@ class Client(QObject):
                     if response.code == 401:
                         # Refresh auth failed, ask user to re-authenticate.
                         self.authenticationRequired.emit()
+            elif response.code != 401:
+                self.receivedError.emit(response.code)
 
         return response
 
@@ -357,6 +360,9 @@ class Client(QObject):
         )
 
         response: Response = request.send(self.session, wait_until_finished=True)
+        if not response.ok:
+            self.receivedError.emit(response.code)
+            return
 
         # Get the finished stream from the text/event-stream
         # Index -1 Is empty string, as the response ends with 2 newlines
