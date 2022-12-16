@@ -28,7 +28,7 @@
     "warnings.empty_token.title": "No Session",
     "errors.authentication_failed.description": "Failed to login to <b>%s</b>.<br><br>Error: %s",
     "errors.authentication_failed.title": "Authentication Failed",
-    "errors.client_http_error.description": "Error %i: %s",
+    "errors.client_http_error.description": "Error when attempting to access %s (%i):\n%s",
     "errors.client_http_error.title": "Client HTTP Error: %s",
     "errors.missing_package.cancel": "Cancel",
     "errors.missing_package.description": "The action \"%s\" requires the \"{0}\" package, which is not currently installed.\n\nPressing \"{errors.missing_package.install}\" will install it using the following command:\n\n\"%s -m pip install {0}\"",

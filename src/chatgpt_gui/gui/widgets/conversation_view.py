@@ -114,8 +114,8 @@ class ConversationView(QFrame):
 
         app().client.receivedMessage.connect(self.receive_message)
         app().client.receivedError.connect(DistributedCallable((
-            lambda _: setattr(self, 'is_waiting', False),
-            lambda _: self.send_button.setDisabled(False)
+            lambda *_: setattr(self, 'is_waiting', False),
+            lambda *_: self.send_button.setDisabled(False)
         )))
 
     def append_to_view(self, text: str) -> None:

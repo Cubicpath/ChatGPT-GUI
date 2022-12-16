@@ -37,7 +37,7 @@ class Client(QObject):
     """Asynchronous HTTP REST Client that interfaces with ChatGPT."""
 
     authenticationRequired = Signal()
-    receivedError = Signal(int)
+    receivedError = Signal(str, int)
     receivedMessage = Signal(Message, Conversation)
     signedOut = Signal()
 
@@ -276,7 +276,7 @@ class Client(QObject):
                         # Refresh auth failed, ask user to re-authenticate.
                         self.authenticationRequired.emit()
             elif response.code != 401:
-                self.receivedError.emit(response.code)
+                self.receivedError.emit(response.url.toDisplayString(), response.code)
 
         return response
 
@@ -361,7 +361,7 @@ class Client(QObject):
 
         response: Response = request.send(self.session, wait_until_finished=True)
         if not response.ok:
-            self.receivedError.emit(response.code)
+            self.receivedError.emit(response.url.toDisplayString(), response.code)
             return
 
         # Get the finished stream from the text/event-stream
