@@ -55,7 +55,7 @@ class ConversationTabs(QTabWidget):
 
         :param index: Index of conversation to remove.
         """
-        view: ConversationView = self.conversation_tabs.widget(index)  # type: ignore
+        view: ConversationView = self.widget(index)  # type: ignore
         view.deleteLater()
 
         self.removeTab(index)
@@ -68,3 +68,10 @@ class ConversationTabs(QTabWidget):
 
         :param point: The point to place the context menu.
         """
+        from ..menus import ConversationsContextMenu
+
+        view: ConversationView = self.currentWidget()  # type: ignore
+
+        menu = ConversationsContextMenu(self, view)
+        menu.exec(self.mapToGlobal(point))
+        menu.deleteLater()

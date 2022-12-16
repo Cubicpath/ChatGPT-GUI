@@ -9,6 +9,7 @@ __all__ = (
     'AppWindow',
     'CaptchaDialog',
     'ComboBox',
+    'ConversationsContextMenu',
     'ConversationTabs',
     'ConversationView',
     'ExceptionLogger',
@@ -33,6 +34,7 @@ from .aliases import tr
 from .app import GetterApp
 from .app import Theme
 from .menus import AccountContextMenu
+from .menus import ConversationsContextMenu
 from .menus import HelpContextMenu
 from .menus import ToolsContextMenu
 from .widgets import ComboBox

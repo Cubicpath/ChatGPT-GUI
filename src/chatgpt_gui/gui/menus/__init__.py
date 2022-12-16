@@ -5,10 +5,12 @@
 
 __all__ = (
     'AccountContextMenu',
+    'ConversationsContextMenu',
     'HelpContextMenu',
     'ToolsContextMenu',
 )
 
 from .account import AccountContextMenu
+from .conversations import ConversationsContextMenu
 from .help import HelpContextMenu
 from .tools import ToolsContextMenu
