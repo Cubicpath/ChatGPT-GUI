@@ -7,6 +7,25 @@ PySide6-Essentials == 6.4.1
 
 # Cloudflare bypass
 undetected-chromedriver == 3.1.7
+    requests
+        charset-normalizer < 3, >= 2
+        idna < 4, >= 2.5
+    selenium >= 4.0.0
+        urllib3[socks] ~= 1.26
+        trio ~= 0.17
+            attrs >= 19.2.0
+            sortedcontainers
+            exceptiongroup
+            outcome
+            sniffio
+            cffi >= 1.14; os_name == "nt" and implementation_name != "pypy"
+                pycparser; os_name == "nt" and implementation_name != "pypy"
+        trio-websocket ~= 0.9
+            async-generator >= 1.10
+            wsproto >= 0.14
+                h11 < 1, >= 0.9.0
+        certifi >= 2021.10.8
+    websockets
 
 # auth0 TLS Fingerprinting bypasser
 tls-client == 0.1.5
