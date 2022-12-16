@@ -100,8 +100,8 @@ If you ever need to directly edit your session data, it follows the following fo
 ```json
 {
   "user": {
-    "id": "Your user id (starting with a 'user-' prefix)"
-    "name": "Your username (usually same as your email)"
+    "id": "Your user id (starting with a 'user-' prefix)",
+    "name": "Your username (usually same as your email)",
     "email": "The email tied to your session",
     "image": "Link to your profiles image (usually same as your picture)",
     "picture": "Link to your profile picture",
