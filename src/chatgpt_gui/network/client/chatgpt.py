@@ -110,6 +110,9 @@ class Client(QObject):
         if self.session_data.cf_bm:
             self.set_cookie('__cf_bm', self.session_data.cf_bm)
 
+        if self.session_data.cf_unique_visitor_id:
+            self.set_cookie('_cfuvid', self.session_data.cf_unique_visitor_id)
+
         if self.session_data.cf_clearance:
             self.set_cookie('cf_clearance', self.session_data.cf_clearance)
 
@@ -426,6 +429,9 @@ class Client(QObject):
 
         if cf_bm := self.session.cookies.get('__cf_bm'):
             self.session_data.cf_bm = cf_bm
+
+        if cf_unique_visitor_id := self.session.cookies.get('_cfuvid'):
+            self.session_data.cf_unique_visitor_id = cf_unique_visitor_id
 
         if cf_clearance := self.session.cookies.get('cf_clearance'):
             self.session_data.cf_clearance = cf_clearance

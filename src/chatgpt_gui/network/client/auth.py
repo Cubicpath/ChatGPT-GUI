@@ -338,7 +338,7 @@ class Authenticator(QObject):
 
             cookie_values: dict[str, str] = {}
 
-            for cookie_name in ('__cf_bm', 'cf_clearance',):
+            for cookie_name in ('__cf_bm', '_cfuvid', 'cf_clearance'):
                 # Use regex to get the cookies
                 pattern = re.compile(f'{cookie_name}=.*?;')
                 if match := pattern.match(set_cookie_header):
@@ -354,6 +354,8 @@ class Authenticator(QObject):
 
                         if cookie_name == '__cf_bm':
                             self.session_data.cf_bm = value
+                        elif cookie_name == '_cfuvid':
+                            self.session_data.cf_unique_visitor_id = value
                         elif cookie_name == 'cf_clearance':
                             self.session_data.cf_clearance = value
                             self.session_data.cf_expires = dt.datetime.now() + dt.timedelta(hours=1)

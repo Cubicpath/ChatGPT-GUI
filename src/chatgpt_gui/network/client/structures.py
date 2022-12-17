@@ -151,6 +151,7 @@ class Session:
 
     user: User | None = field(default=None)
     cf_bm: str | None = field(default=None)
+    cf_unique_visitor_id: str | None = field(default=None)
     cf_clearance: str | None = field(default=None)
     cf_expires: dt.datetime | None = field(default=None)
     session_expires: dt.datetime | None = field(default=None)
@@ -177,6 +178,7 @@ class Session:
         return cls(
             user=user,
             cf_bm=cf_data.get('bm'),
+            cf_unique_visitor_id=cf_data.get('unique_visitor_id'),
             cf_clearance=cf_data.get('clearance'),
             cf_expires=cf_expires,
             session_expires=session_expires,
@@ -188,6 +190,7 @@ class Session:
         """Clear data while keeping object reference."""
         self.user = None
         self.cf_bm = None
+        self.cf_unique_visitor_id = None
         self.cf_clearance = None
         self.cf_expires = None
         self.session_expires = None
@@ -207,6 +210,7 @@ class Session:
             'user': self.user.to_json() if self.user else {},
             'cloudflare': {
                 'bm': self.cf_bm,
+                'unique_visitor_id': self.cf_unique_visitor_id,
                 'clearance': self.cf_clearance,
                 'expires': self.cf_expires.strftime(CG_DATE_FORMAT) if self.cf_expires is not None else None
             },
