@@ -26,6 +26,7 @@ An unofficial GUI app for ChatGPT.
      - [Authentication](#authentication)
           - [Session Token Guide](#session-token-guide)
           - [Session Data](#session-data)
+     - [Saving/Loading Conversations](#savingloading-conversations)
      - [Themes](#themes)
           - [Theme File Structure](#theme-file-structure)
 
@@ -52,15 +53,15 @@ If you like this application, be sure to star :)
 - [x] Session (token) Persistence
 - [x] Automatic Access Token Refreshing
 - [x] Multiple Concurrent Conversations
+- [x] Conversation Saving & Loading
 - [x] Multi-line input
 - [x] Exception Reporter & Traceback Viewer
 - [x] Themes
   - Builtin themes are: [Breeze Dark, Breeze Light, and Legacy]
 
 #### Todo:
-- [ ] Conversation Saving & Loading
-- [ ] Retry AI Message
 - [ ] Pretty Conversation Views
+- [ ] Retry AI Message
 
 How to Use:
 ---------------
@@ -93,7 +94,7 @@ Refer to session token authentication in the meantime.
 - Press the Set button, and you should now be authenticated!
 
 #### Session Data:
-Session data is stored in a hidden file (~/.config/chatgpt_gui/.session.json), for persistence.
+Session data is stored in a hidden file (`~/.config/chatgpt_gui/.session.json`), for persistence.
 When you sign out or clear your session token, it automatically deletes all session data.
 
 If you ever need to directly edit your session data, it follows the following format:
@@ -116,6 +117,53 @@ If you ever need to directly edit your session data, it follows the following fo
   "expires": "Automatically acquired after refresh_auth()",
   "token": "Value of the __Secure-next-auth.session-token cookie",
   "user_agent": "User Agent the Client/Authenticator use"
+}
+```
+
+### Saving/Loading Conversations
+You can save your currently selected conversation with ChatGPT by right-clicking any tab and
+pressing the `Export Conversation To...` button. This will open a file dialog where you can rename
+your conversation anything, which will show when loaded.
+
+You can load a conversation that was previously saved by pressing the `Import Conversation From...`
+button, and selecting the JSON file containing the conversation.
+
+By default, all conversations are stored in the `~/.cache/chatgpt_gui/` directory.
+But you can choose any folder when exporting.
+
+**NOTE: Conversations from one account CANNOT be accessed from another.**
+
+#### Conversation Format:
+Conversations are stored as a linear list of messages, where each message is
+a response to the one before it. All UUID's are tracked, which allows the Client to
+continue conversations after import.
+
+They are stored in the following data format:
+```json
+{
+  "id": "Conversation UUID",
+  "messages": [
+    {
+      "id": "Message UUID",
+      "role": "user",
+      "content": {
+        "content_type": "text",
+        "parts": [
+          "Your message to ChatGPT"
+        ]
+      }
+    },
+    {
+      "id": "Message UUID",
+      "role": "assistant",
+      "content": {
+        "content_type": "text",
+        "parts": [
+          "Response from ChatGPT"
+        ]
+      }
+    }
+  ]
 }
 ```
 
