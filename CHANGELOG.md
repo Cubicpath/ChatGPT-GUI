@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2022-12-16 [PyPI](https://pypi.org/project/chatgpt-gui/0.4.1)
+### Added
+- Saving/Loading of conversations
+- Obvious HTTP client errors to provide better context, in form of popups
+- Storage for the `_cfuvid` cookie (Rate Limiting)
+
+### Changed
+- Many error messages
+
+### Fixed
+- Crash on startup if missing Google Chrome
+- (Attempted) fix for chromedriver proxy support
+
+
 ## [0.4] - 2022-12-13 [PyPI](https://pypi.org/project/chatgpt-gui/0.4)
 ### Added
 - Automatic `cf_clearance` and `__cf_bm` support
@@ -84,7 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic input and output communication to ChatGPT
 
 
-[Unreleased]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.4...HEAD
+[Unreleased]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.4...v0.4.1
 [0.4]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.3.2...v0.4
 [0.3.3]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/Cubicpath/ChatGPT-GUI/compare/v0.3.1...v0.3.2
