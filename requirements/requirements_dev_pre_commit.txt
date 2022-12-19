@@ -31,7 +31,7 @@ pydocstyle == 6.1.1
     snowballstemmer
 
 # General Code Linter
-pylint == 2.15.8
+pylint == 2.15.9
     astroid <= 2.14.0-dev0, >= 2.12.12
         wrapt < 2, >= 1.11
         lazy-object-proxy >= 1.4.0
