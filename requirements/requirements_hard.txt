@@ -12,7 +12,7 @@ undetected-chromedriver == 3.1.7
         idna < 4, >= 2.5
     selenium >= 4.0.0
         urllib3[socks] ~= 1.26
-        trio ~= 0.17
+        trio ~= 0.22
             attrs >= 19.2.0
             sortedcontainers
             exceptiongroup
