@@ -6,8 +6,52 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    versioning-strategy: "increase"
     labels:
       - "pip requirements"
+    reviewers:
+      - "Cubicpath"
     ignore:
-      # shiboken6 is updated at the same time and with the same version as PySide6
+      # Ignore all sub-dependencies listed in the requirement files
+      # Everything not listed as a dependency in pyproject.toml should be here
+      # Ideally, I would exclude the files themselves from dependabot, but this is not currently an option
+      # See https://github.com/dependabot/dependabot-core/issues/4364 for info
       - dependency-name: "shiboken6"
+      - dependency-name: "requests"
+      - dependency-name: "charset-normalizer"
+      - dependency-name: "idna"
+      - dependency-name: "selenium"
+      - dependency-name: "urllib3*"
+      - dependency-name: "trio*"
+      - dependency-name: "attrs"
+      - dependency-name: "sortedcontainers"
+      - dependency-name: "exceptiongroup"
+      - dependency-name: "outcome"
+      - dependency-name: "cffi"
+      - dependency-name: "pycparser"
+      - dependency-name: "sniffio"
+      - dependency-name: "async-generator"
+      - dependency-name: "wsproto"
+      - dependency-name: "h11"
+      - dependency-name: "certifi"
+      - dependency-name: "websockets"
+      - dependency-name: "soupsieve"
+      - dependency-name: "pycodestyle"
+      - dependency-name: "tokenize-rt"
+      - dependency-name: "classify-imports"
+      - dependency-name: "GitPython"
+      - dependency-name: "PyYAML"
+      - dependency-name: "stevedore"
+      - dependency-name: "snowballstemmer"
+      - dependency-name: "astroid"
+      - dependency-name: "wrapt"
+      - dependency-name: "lazy-object-proxy"
+      - dependency-name: "colorama"
+      - dependency-name: "dill"
+      - dependency-name: "isort"
+      - dependency-name: "mccabe"
+      - dependency-name: "platformdirs"
+      - dependency-name: "tomlkit"
+      - dependency-name: "tomli"
+      - dependency-name: "nodeenv"
+      - dependency-name: "platformdirs"
