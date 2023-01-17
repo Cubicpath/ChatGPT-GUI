@@ -27,7 +27,7 @@ bandit == 1.7.4
     stevedore >= 1.20.0
 
 # Documentation-Specific Checker
-pydocstyle == 6.1.1
+pydocstyle == 6.2.3
     snowballstemmer
 
 # General Code Linter
