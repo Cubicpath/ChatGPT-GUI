@@ -54,4 +54,3 @@ updates:
       - dependency-name: "tomlkit"
       - dependency-name: "tomli"
       - dependency-name: "nodeenv"
-      - dependency-name: "platformdirs"
