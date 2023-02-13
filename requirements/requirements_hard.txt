@@ -6,7 +6,7 @@ PySide6-Essentials == 6.4.1
     shiboken6 == 6.4.1
 
 # Cloudflare bypass
-undetected-chromedriver == 3.1.7
+undetected-chromedriver == 3.4.6
     requests
         charset-normalizer < 3, >= 2
         idna < 4, >= 2.5
