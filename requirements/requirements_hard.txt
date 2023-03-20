@@ -28,7 +28,7 @@ undetected-chromedriver == 3.1.7
     websockets
 
 # auth0 TLS Fingerprinting bypasser
-tls-client == 0.1.5
+tls-client == 0.1.9
 
 # HTML parser
 beautifulsoup4 == 4.11.1
